@@ -249,7 +249,7 @@ CONTAINS
    N1=UBOUND(Qc,DIM=1)
    DO i=N0,N1
       CALL index(i,xb,xc,xf)
-       Qnp1(i) = Qm(xc)   - 2*C*dt*( Qc(xf) - Qc(xb) )/(2*dx)      + 2*dt*Kdif*( Qm(xf) - 2*Qm(xc) + Qm(xb) )/(dx*dx)
+       Qnp1(i) = Qm(xc)   - 2*C*dt*( Qc(xf) - Qc(xb) )/(2*dx) !+ 2*dt*Kdif*( Qm(xf) - 2*Qm(xc) + Qm(xb) )/(dx*dx)
 
       !Qnp1(i) = Qc(xc)   - C*dt*( Qc(xc) - Qc(xb) )/(dx)  + dt*Kdif*( Qm(xf) - 2*Qm(xc) + Qm(xb) )/(dx*dx)
 
@@ -479,12 +479,12 @@ PROGRAM  Main
   USE Class_WritetoGrads, Only : SchemeWriteCtl,SchemeWriteData,InitClass_WritetoGrads
    IMPLICIT NONE
    REAL(KIND=r8)               :: tend   = 1800.0_r8!End time of simulation
-   CHARACTER(LEN=10)           :: scheme = 'RK4CS'   ! Advection scheme. Possible values: UPSTREAM, CTCS,RK4CS,RK4CS_RA,RK4CS_RAW
+   CHARACTER(LEN=10)           :: scheme = 'CTCS'   ! Advection scheme. Possible values: UPSTREAM, CTCS,RK4CS,RK4CS_RA,RK4CS_RAW
    REAL(KIND=r8)               :: alfa   = 0.3_r8
    REAL(KIND=r8)               :: beta   = 0.6_r8    ! 0.5<  beta  <=1
    REAL(KIND=r8)               :: Kdif   = 2.0e-1_r8
    REAL(KIND=r8)               :: uvel   = 1.5_r8
-   REAL(KIND=r8)               :: dt     = 0.6_r8
+   REAL(KIND=r8)               :: dt     = 0.5_r8
 
    INTEGER :: irec_err,unit2
 
