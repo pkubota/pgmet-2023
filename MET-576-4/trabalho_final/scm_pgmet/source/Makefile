@@ -7,7 +7,7 @@ LOADFLAG= -static
 #EXEC=../exec/scm_pgmet.exe
 EXEC=./scm_pgmet.exe
 
-OBJ=  Main.o  Class_Module_Constants.o Class_Module_TimeManager.o
+OBJ=  Main.o  Class_Module_Constants.o Class_Module_Fields.o Class_Module_TimeManager.o
 
 Main:	$(OBJ)
 	$(FC) $(FFLAGS) -o $(EXEC) $(LOADFLAG) $(OBJ)
@@ -18,7 +18,10 @@ Class_Module_Constants.o: Class_Module_Constants.f90
 Class_Module_TimeManager.o: Class_Module_TimeManager.f90 Class_Module_Constants.o
 	$(FC) $(FFLAGS) -c Class_Module_TimeManager.f90
 
-Main.o: Main.f90  Class_Module_Constants.o Class_Module_TimeManager.o
+Class_Module_Fields.o: Class_Module_Fields.f90 Class_Module_Constants.o
+	$(FC) $(FFLAGS) -c Class_Module_Fields.f90
+
+Main.o: Main.f90  Class_Module_Constants.o Class_Module_TimeManager.o Class_Module_Fields.o
 	$(FC) $(FFLAGS) -c Main.f90
 
 .SUFFIXES:

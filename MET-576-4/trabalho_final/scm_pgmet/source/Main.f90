@@ -3,7 +3,7 @@ PROGRAM Main
  USE Class_Module_TimeManager, Only : Init_Class_Module_TimeManager, dt_step,&
                                       SetTimeControl,idatei,idatec,idatef,ICtrDay,&
                                       TimeIncrementSeg,GetRec2ReadWrite
- USE Class_Module_Fields, Only : Init_Class_Module_Fields
+ USE Class_Module_Fields, Only : Init_Class_Module_Fields,ReadFields
  IMPLICIT NONE
  
  CALL Init()
@@ -40,6 +40,7 @@ CONTAINS
       !     step loop starts
       !
       rec=GetRec2ReadWrite(idatei,idatec)
+      CALL ReadFields(rec)
 
       TimeIncrSeg=TimeIncrSeg+dt_step
       IF(ABS( MOD(TimeIncrSeg+0.03125_r8,86400.0_r8)-0.03125_r8).LT.0.0625_r8)THEN
