@@ -34,12 +34,12 @@ CONTAINS
 
 
   DHFCT=24
-  dt_step=3600.0
+  dt_step=900.0
   ICtrDay=0
  END SUBROUTINE Init_Class_Module_TimeManager
 
  FUNCTION TimeIncrementSeg(idate,idatec, ifday, tod, ihr, iday, mon, iyr,&
-                            ktm,kt,ktp,ahour,maxtim,dt_step,jdt)  RESULT (ok)
+                            ktm,kt,ktp,ahour,bhour,maxtim,dt_step,jdt)  RESULT (ok)
     !
     !
     !==========================================================================
@@ -76,6 +76,7 @@ CONTAINS
     INTEGER      , INTENT(inout) :: kt  
     INTEGER      , INTENT(inout) :: ktp 
     REAL(KIND=r8), INTENT(inout) :: ahour
+    REAL(KIND=r8), INTENT(inout) :: bhour
     INTEGER      , INTENT(in   ) :: maxtim
     REAL(KIND=r8), INTENT(in   ) :: dt_step
     INTEGER      , INTENT(in   ) :: jdt
@@ -98,7 +99,7 @@ CONTAINS
 
     ktm=kt
     ctim=tod+idate(1)*3600.0_r8
-
+    bhour=ahour
     IF (ctim >= 86400.e0_r8) THEN
        kday=1
        ctim=ctim-86400.e0_r8
