@@ -122,11 +122,21 @@ PROGRAM advect
   INTEGER                     :: itr_max=100
   ! initial condition type
   INTEGER, PARAMETER          :: inittype = 2
-  ! slope type (1=godunov, 2=plm, 3=ppm)
+  ! iinittype == 1! sin wave
+  ! iinittype == 2! square wave
+  ! iinittype == 3! wave packet
+  ! iinittype == 4! gaussian
   INTEGER, PARAMETER :: islopetype = 1
+  ! slope type (1=godunov, 2=plm, 3=ppm)
 
   INTEGER, PARAMETER :: plmlimiter = 1
-
+  !IF (islopetype == 2) THEN
+  !   IF (plmlimiter == 1) THEN
+  !      slope = "plm+MC"
+  !   ELSE IF (plmlimiter == 2) THEN
+  !      slope = "plm+SBee"
+  !   ENDIF
+   !END IF
   LOGICAL :: First = .true.
   INTEGER :: irec = 0
 
