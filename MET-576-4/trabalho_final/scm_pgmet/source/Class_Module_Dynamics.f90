@@ -16,8 +16,9 @@ MODULE Class_Module_Dynamics
   INTEGER ::  Idim
   INTEGER ::  Jdim
   INTEGER ::  Kdim
-  REAL(KIND=8) :: DeltaT
-
+  REAL(KIND=r8) :: DeltaT
+  REAL(KIND=8), PUBLIC   ,parameter        :: vis    =  2.0e-1_r8! 1.5e-10 !1.5e-5        !  viscosity
+  REAL(KIND=8), PUBLIC   ,parameter        :: taul   = 120_r8
   ! Selecting Unit
 
 
@@ -31,7 +32,7 @@ CONTAINS
   INTEGER , INTENT(IN   ) :: nLat
   INTEGER , INTENT(IN   ) :: nLon
   INTEGER , INTENT(IN   ) :: nLev
-  REAL(KIND=8), INTENT(IN   )  :: dt_step
+  REAL(KIND=r8), INTENT(IN   )  :: dt_step
   Idim=nLon
   Jdim=nLat
   Kdim=nLev
@@ -65,6 +66,10 @@ CONTAINS
               vo(i,j,k) =  v_ref(i,j,k)
               to(i,j,k) =  t_ref(i,j,k)
               qo(i,j,k) =  q_ref(i,j,k)
+              U_C(i,j,k)=  u_ref(i,j,k)
+              V_C(i,j,k)=  v_ref(i,j,k)
+              T_C(i,j,k)=  t_ref(i,j,k)
+              Q_C(i,j,k)=  q_ref(i,j,k)
            END DO
         END DO
      END DO
@@ -72,10 +77,10 @@ CONTAINS
      DO k=1,Kdim
         DO j=1,Jdim
            DO i=1,  Idim
-              uo(i,j,k)=  U_C(i,j,k)
-              vo(i,j,k)=  V_C(i,j,k)
-              to(i,j,k)=  T_C(i,j,k)
-              qo(i,j,k)=  Q_C(i,j,k)
+              uo(i,j,k)=  U_C  (i,j,k)
+              vo(i,j,k)=  v_ref(i,j,k)
+              to(i,j,k)=  t_ref(i,j,k)
+              qo(i,j,k)=  q_ref(i,j,k)
            END DO
         END DO
      END DO
@@ -87,11 +92,10 @@ CONTAINS
  call Solve_Forward_Beta_plane_Grid_A(ku3, kv3, kt3, kq3, uo+ku2*dt2, vo+kv2*dt2     , to+kt2*dt2 , qo+kq2*dt2)
  call Solve_Forward_Beta_plane_Grid_A(ku4, kv4, kt4, kq4, uo+ku3*dt , vo+kv3*dt      , to+kt3*dt  , qo+kq3*dt )
    
-
  ! final step and time marching / new values for RK4
- DO k=1,Kdim
-    DO j=1,Jdim
-       DO i=1,  Idim
+ DO k=1,Kdim-1
+    DO j=2,Jdim-1
+       DO i=2,  Idim-1
           U_N(i,j,k) = uo(i,j,k) + (ku1(i,j,k) + 2.0*ku2(i,j,k) + 2.0*ku3(i,j,k) + ku4(i,j,k))*dt6
           V_N(i,j,k) = vo(i,j,k) + (kv1(i,j,k) + 2.0*kv2(i,j,k) + 2.0*kv3(i,j,k) + kv4(i,j,k))*dt6
           T_N(i,j,k) = to(i,j,k) + (kt1(i,j,k) + 2.0*kt2(i,j,k) + 2.0*kt3(i,j,k) + kt4(i,j,k))*dt6
@@ -101,9 +105,9 @@ CONTAINS
  END DO
 
  ! updating the data
- DO k=1,Kdim
-    DO j=1,Jdim
-       DO i=1,  Idim
+ DO k=1,Kdim-1
+    DO j=2,Jdim-1
+       DO i=2,  Idim-1
           U_C(i,j,k) = U_N(i,j,k) 
           V_C(i,j,k) = V_N(i,j,k)
           T_C(i,j,k) = T_N(i,j,k)
@@ -111,6 +115,7 @@ CONTAINS
        END DO
     END DO
  END DO
+ !PRINT*,it,MAXVAL(U_C(2:Idim,2:Jdim,2:Kdim-1)),MINVAL(U_C(2:Idim,2:Jdim,2:Kdim-1))
  END SUBROUTINE RunDynamics
  
  
@@ -126,45 +131,54 @@ CONTAINS
   REAL(KIND=8) :: dPdx
   REAL(KIND=8) :: lnPs_xf
   REAL(KIND=8) :: lnPs_xb
+  REAL(KIND=8) :: Ps_xf
+  REAL(KIND=8) :: Ps_xc
   REAL(KIND=8) :: Tv
+  REAL(KIND=8) :: vis2dudx
+  REAL(KIND=8) :: vis2dudy
+  REAL(KIND=8) :: factor
+  REAL(KIND=8) :: term1
+  REAL(KIND=8) :: TermNewton
   INTEGER :: i,j,k
   INTEGER :: xb,xc,xf
   INTEGER :: yb,yc,yf
+  TermEqMomU=0.0_r8;TermEqMomV=0.0_r8; TermEqConT=0.0_r8; TermEqConQ=0.0_r8
   u=u_in;v=v_in;t=t_in;q=q_in
   
-  u(1:Idim   ,1:Jdim,Kdim)=(u_ref(1:Idim   ,1:Jdim,Kdim) + u(1:Idim,1:Jdim,Kdim-1))
+  u(1:Idim   ,1:Jdim,Kdim)=(u_ref(1:Idim   ,1:Jdim,Kdim))!+ u(1:Idim,1:Jdim,Kdim-1))
 
-  v(1:Idim   ,1:Jdim,Kdim)=(v_ref(1:Idim   ,1:Jdim,Kdim) + v(1:Idim,1:Jdim,Kdim-1))
+  v(1:Idim   ,1:Jdim,Kdim)=(v_ref(1:Idim   ,1:Jdim,Kdim))!+ v(1:Idim,1:Jdim,Kdim-1))
 
-  t(1:Idim   ,1:Jdim,Kdim)=(t_ref(1:Idim   ,1:Jdim,Kdim) + t(1:Idim,1:Jdim,Kdim-1))
+  t(1:Idim   ,1:Jdim,Kdim)=(t_ref(1:Idim   ,1:Jdim,Kdim))!+ t(1:Idim,1:Jdim,Kdim-1))
 
-  q(1:Idim   ,1:Jdim,Kdim)=(q_ref(1:Idim   ,1:Jdim,Kdim) + q(1:Idim,1:Jdim,Kdim-1))
+  q(1:Idim   ,1:Jdim,Kdim)=(q_ref(1:Idim   ,1:Jdim,Kdim))!+ q(1:Idim,1:Jdim,Kdim-1))
 
 
   DO k=1,Kdim
-     u(1   ,1:Jdim,k)=(u_ref(1   ,1:Jdim,k) + u(2     ,1:Jdim,k))
-     u(Idim,1:Jdim,k)=(u_ref(Idim,1:Jdim,k) + u(Idim-1,1:Jdim,k))
 
-     u(1:Idim,1   ,k)=(u_ref(1:Idim,1   ,k) + u(1:Idim,2     ,k))
-     u(1:Idim,Jdim,k)=(u_ref(1:Idim,Jdim,k) + u(1:Idim,Jdim-1,k))
+     u(1   ,1:Jdim,k)=(u_ref(1   ,1:Jdim,k))!+ u(2     ,1:Jdim,k))
+     u(Idim,1:Jdim,k)=(u_ref(Idim,1:Jdim,k))!+ u(Idim-1,1:Jdim,k))
 
-     v(1   ,1:Jdim,k)=(v_ref(1   ,1:Jdim,k) + v(2     ,1:Jdim,k))
-     v(Idim,1:Jdim,k)=(v_ref(Idim,1:Jdim,k) + v(Idim-1,1:Jdim,k))
+     u(1:Idim,1   ,k)=(u_ref(1:Idim,1   ,k))!+ u(1:Idim,2     ,k))
+     u(1:Idim,Jdim,k)=(u_ref(1:Idim,Jdim,k))!+ u(1:Idim,Jdim-1,k))
 
-     v(1:Idim,1   ,k)=(v_ref(1:Idim,1   ,k) + v(1:Idim,2     ,k))
-     v(1:Idim,Jdim,k)=(v_ref(1:Idim,Jdim,k) + v(1:Idim,Jdim-1,k))
+     v(1   ,1:Jdim,k)=(v_ref(1   ,1:Jdim,k))!+ v(2     ,1:Jdim,k))
+     v(Idim,1:Jdim,k)=(v_ref(Idim,1:Jdim,k))!+ v(Idim-1,1:Jdim,k))
 
-     t(1   ,1:Jdim,k)=(t_ref(1   ,1:Jdim,k) + t(2     ,1:Jdim,k))
-     t(Idim,1:Jdim,k)=(t_ref(Idim,1:Jdim,k) + t(Idim-1,1:Jdim,k))
+     v(1:Idim,1   ,k)=(v_ref(1:Idim,1   ,k))!+ v(1:Idim,2     ,k))
+     v(1:Idim,Jdim,k)=(v_ref(1:Idim,Jdim,k))!+ v(1:Idim,Jdim-1,k))
 
-     t(1:Idim,1   ,k)=(t_ref(1:Idim,1   ,k) + t(1:Idim,2     ,k))
-     t(1:Idim,Jdim,k)=(t_ref(1:Idim,Jdim,k) + t(1:Idim,Jdim-1,k))
+     t(1   ,1:Jdim,k)=(t_ref(1   ,1:Jdim,k))!+ t(2     ,1:Jdim,k))
+     t(Idim,1:Jdim,k)=(t_ref(Idim,1:Jdim,k))!+ t(Idim-1,1:Jdim,k))
 
-     q(1   ,1:Jdim,k)=(q_ref(1   ,1:Jdim,k) + q(2     ,1:Jdim,k))
-     q(Idim,1:Jdim,k)=(q_ref(Idim,1:Jdim,k) + q(Idim-1,1:Jdim,k))
+     t(1:Idim,1   ,k)=(t_ref(1:Idim,1   ,k))!+ t(1:Idim,2     ,k))
+     t(1:Idim,Jdim,k)=(t_ref(1:Idim,Jdim,k))!+ t(1:Idim,Jdim-1,k))
 
-     q(1:Idim,1   ,k)=(q_ref(1:Idim,1   ,k) + q(1:Idim,2     ,k))
-     q(1:Idim,Jdim,k)=(q_ref(1:Idim,Jdim,k) + q(1:Idim,Jdim-1,k))
+     q(1   ,1:Jdim,k)=(q_ref(1   ,1:Jdim,k))!+ q(2     ,1:Jdim,k))
+     q(Idim,1:Jdim,k)=(q_ref(Idim,1:Jdim,k))!+ q(Idim-1,1:Jdim,k))
+
+     q(1:Idim,1   ,k)=(q_ref(1:Idim,1   ,k))!+ q(1:Idim,2     ,k))
+     q(1:Idim,Jdim,k)=(q_ref(1:Idim,Jdim,k))!+ q(1:Idim,Jdim-1,k))
 
   END DO
   
@@ -174,6 +188,8 @@ CONTAINS
          CALL index(j,Jdim,yb,yc,yf)
          DO i=2,Idim-1
             CALL index(i,Idim,xb,xc,xf)
+
+             TermNewton=(u(xc,yc,k)-u_ref(xc,yc,k))/taul
             !
             !                       --               --   
             !                      |                   |  
@@ -182,8 +198,11 @@ CONTAINS
             !       a*cos^2(theta) |         d lambda  |  
             !                      |                   |  
             !                       --               --   
-
-            udux = (1.0_r8/(r_earth*(cos(CoordLat(xc,yc))**2))) * (u(xc,yc,k) *((u(xf,yc,k) - u(xb,yc,k))/(DeltaLamda(xc,yc))))
+            IF(u(xc,yc,k) >= 0.0_r8) THEN 
+              udux = (1.0_r8/(r_earth*(cos(CoordLat(xc,yc))))) * (u(xc,yc,k) *((u(xf,yc,k) - u(xc,yc,k))/(DeltaLamda(xc,yc)))) 
+            ELSE
+              udux = (1.0_r8/(r_earth*(cos(CoordLat(xc,yc))))) * (u(xc,yc,k) *((u(xb,yc,k) - u(xc,yc,k))/(DeltaLamda(xc,yc))))
+            END IF  
             !
             !                       --                --
             !                       |                   |
@@ -193,8 +212,12 @@ CONTAINS
             !                       |                   |
             !                       --                 --
 
+            IF(v(xc,yc,k) >= 0.0_r8) THEN 
+               vduy  = (1.0_r8/(r_earth))  *  (v(xc,yc,k)*((u(xc,yf,k) - u(xc,yc,k))/(DeltaTheta(xc,yc))))
+            ELSE
+               vduy  = (1.0_r8/(r_earth))  *  (v(xc,yc,k)*((u(xc,yb,k) - u(xc,yc,k))/(DeltaTheta(xc,yc))))
+            END IF  
 
-            vduy  = (1.0_r8/(r_earth*(cos(CoordLat(xc,yc)))))  *  (v(xc,yc,k)*((u(xc,yf,k) - u(xc,yb,k))/(DeltaTheta(xc,yc))))
 
             !      --                --
             !      |                   |
@@ -203,9 +226,10 @@ CONTAINS
             !      |         d P       | 
             !      |                   |
             !      --                 --
+            Ps_xf=Plevs(k+1)!(p_ref(xc,yc)*(Plevs(k+1)/100000.0_r8))
+            Ps_xc=Plevs(k+0)!(p_ref(xc,yc)*(Plevs(k+0)/100000.0_r8))
+            wduz = w_ref (xc,yc,k) * ((u(xc,yc,k+1) - u(xc,yc,k))/(Ps_xf-Ps_xc))
 
-            wduz = w_ref (xc,yc,k) * ((u(xc,yf,k+1) - u(xc,yb,k))/(Plevs(k+1)-Plevs(k)))
- 
             !      --       --
             !      |         |
             !      |         | 
@@ -224,11 +248,28 @@ CONTAINS
             !          |                                |
             !          --                             --
             Tv=t(xc,yc,k)*(1.0_r8 + CTv*q(xc,yc,k))
-            lnPs_xf=log(p_ref(xf,yc)*(Plevs(k)/p_ref(xf,yc)))
-            lnPs_xb=log(p_ref(xb,yc)*(Plevs(k)/p_ref(xb,yc)))
+            lnPs_xf=log(Plevs(k))
+            lnPs_xb=log(Plevs(k))
             dPdx =(1.0_r8/(r_earth)) * (((z_ref(xf,yc,k) - z_ref(xb,yc,k))/(DeltaLamda(xc,yc))) + &
                                           Rd*Tv*((lnPs_xf-lnPs_xb)/(DeltaLamda(xc,yc))))
-            !TermEqMomU(i,j,k) = -(udux +  vduy + betav + gdhx + ru + vis2dudx + vis2dudy)
+            !                  -         -
+            ! d(u)            |d(d(u))    |
+            ! -----  - Neta * |--------   | = 0
+            ! dt              |dxdx       |
+            !                  -         -
+            factor=(r_earth**2)*(cos(CoordLat(xc,yc))**2)
+            vis2dudx=- vis*(1/factor)*((u(xf,yc,k) - 2.0*u(xc,yc,k) + u(xb,yc,k))/(DeltaLamda(xc,yc)*DeltaLamda(xc,yc)))
+            !
+            !                  -       -
+            ! d(u)             |d(d(u)) |
+            ! -----   - Neta * |--------| = 0
+            ! dt               |dydy    |
+            !                  -       -
+            term1=-sin(CoordLat(xc,yc))*((u(xc,yf,k) - u(xc,yc,k))/(DeltaTheta(xc,yc))) &
+                  + cos(CoordLat(xc,yc))*((u(xc,yf,k) - 2.0*u(xc,yc,k) + u(xc,yb,k))/(DeltaTheta(xc,yc)*DeltaTheta(xc,yc)))
+            vis2dudy=- vis*(term1) 
+
+            TermEqMomU(xc,yc,k) = -( udux + vduy + wduz+ fcov  + TermNewton)
          END DO
       END DO
   END DO

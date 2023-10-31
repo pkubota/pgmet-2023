@@ -83,7 +83,7 @@ MODULE Class_Module_Fields
   REAL(KIND=r8),PUBLIC, ALLOCATABLE :: Q_C(:,:,:) 
 
 
-  PUBLIC :: Init_Class_Module_Fields,ReadFields
+  PUBLIC :: Init_Class_Module_Fields,ReadFields,WriteFields,FinalizeFields
 CONTAINS
 
  SUBROUTINE Init_Class_Module_Fields () 
@@ -161,8 +161,8 @@ CONTAINS
   OPEN(unit=unitsurp,FILE='/cygdrive/d/paulo.kubota/pgmet/scm_pgmet/datain/SurfacePressure.bin',&
        FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec2D,ACTION='READ',STATUS='OLD') 
 
-   OPEN(unit=unitoutp,FILE='/cygdrive/d/paulo.kubota/pgmet/scm_pgmet/datain/out.bin',&
-      FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec2D,ACTION='WRITE',STATUS='UNKNOWN') 
+  OPEN(unit=unitoutp,FILE='/cygdrive/d/paulo.kubota/pgmet/scm_pgmet/dataout/SCM_OUT.bin',&
+      FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='WRITE',STATUS='UNKNOWN') 
 
   DO j=1,nLat
      CoordLon(1,j) = InitLon*Deg2Rad
@@ -186,16 +186,19 @@ CONTAINS
 
   DO j=1,nLat
      DO i=2,nLon-1
-        DeltaLamda(i,j) = (CoordLon(i+1,j)-CoordLon(i-1,j))
+        DeltaLamda(i,j) = (CoordLon(i+1,j)-CoordLon(i,j))
      END DO
+        DeltaLamda(1,j)    = (DeltaLamda(2,j))
+        DeltaLamda(nLon,j) = (DeltaLamda(nLon-1,j))
   END DO
 
   DO i=1,nLon
      DO j=2,nLat-1
-        DeltaTheta(i,j) = (CoordLat(i,j+1)-CoordLat(i,j-1))
+        DeltaTheta(i,j) = (CoordLat(i,j+1)-CoordLat(i,j))
      END DO
+        DeltaTheta(i,1) = DeltaTheta(i,2)
+        DeltaTheta(i,nLat) = DeltaTheta(i,nLat-1)
   END DO
-  
   Plevs(1:nLev)=(/1000.0_r8,975.0_r8,950.0_r8,925.0_r8,900.0_r8,875.0_r8,850.0_r8,825.0_r8,800.0_r8,775.0_r8,&
                    750.0_r8,700.0_r8,650.0_r8,600.0_r8,550.0_r8,500.0_r8,450.0_r8,400.0_r8,350.0_r8,300.0_r8,&
                    250.0_r8,225.0_r8,200.0_r8,175.0_r8,150.0_r8,125.0_r8,100.0_r8, 70.0_r8, 50.0_r8, 30.0_r8,&
@@ -242,4 +245,22 @@ CONTAINS
   z_ref= var3Z_A *w1 + w2*var3Z_B
 
  END SUBROUTINE ReadFields
+ 
+ 
+ SUBROUTINE WriteFields(irec)
+  IMPLICIT NONE 
+  INTEGER      , INTENT(INOUT) :: irec
+  
+  irec=irec+1
+  WRITE(unitoutp,rec=irec)REAL(U_C,kind=r4)
+
+ END SUBROUTINE WriteFields
+
+ SUBROUTINE FinalizeFields()
+  IMPLICIT NONE 
+
+  DEALLOCATE(V_N)
+
+ END SUBROUTINE FinalizeFields
+
 END MODULE Class_Module_Fields
