@@ -17,8 +17,8 @@ MODULE Class_Module_Dynamics
   INTEGER ::  Jdim
   INTEGER ::  Kdim
   REAL(KIND=r8) :: DeltaT
-  REAL(KIND=8), PUBLIC   ,parameter        :: vis    =  2.0e-1_r8! 1.5e-10 !1.5e-5        !  viscosity
-  REAL(KIND=8), PUBLIC   ,parameter        :: taul   = 120_r8
+  REAL(KIND=8), PUBLIC   ,parameter        :: vis    =  2.0e2_r8! 1.5e-10 !1.5e-5        !  viscosity
+  REAL(KIND=8), PUBLIC   ,parameter        :: taul   = 3600_r8
   ! Selecting Unit
 
 
@@ -115,7 +115,8 @@ CONTAINS
        END DO
     END DO
  END DO
- !PRINT*,it,MAXVAL(U_C(2:Idim,2:Jdim,2:Kdim-1)),MINVAL(U_C(2:Idim,2:Jdim,2:Kdim-1))
+ PRINT*,it,MAXVAL(U_C(2:Idim,2:Jdim,2:Kdim-1)),MINVAL(U_C(2:Idim,2:Jdim,2:Kdim-1)),&
+           MAXVAL(w_ref(2:Idim,2:Jdim,2:Kdim-1)), MINVAL(w_ref(2:Idim,2:Jdim,2:Kdim-1))
  END SUBROUTINE RunDynamics
  
  
@@ -137,7 +138,7 @@ CONTAINS
   REAL(KIND=8) :: vis2dudx
   REAL(KIND=8) :: vis2dudy
   REAL(KIND=8) :: factor
-  REAL(KIND=8) :: term1
+  REAL(KIND=8) :: term1,uadvc,vadvc,wadvc
   REAL(KIND=8) :: TermNewton
   INTEGER :: i,j,k
   INTEGER :: xb,xc,xf
@@ -145,28 +146,28 @@ CONTAINS
   TermEqMomU=0.0_r8;TermEqMomV=0.0_r8; TermEqConT=0.0_r8; TermEqConQ=0.0_r8
   u=u_in;v=v_in;t=t_in;q=q_in
   
-  u(1:Idim   ,1:Jdim,Kdim)=(u_ref(1:Idim   ,1:Jdim,Kdim))!+ u(1:Idim,1:Jdim,Kdim-1))
+  u(1:Idim   ,1:Jdim,Kdim)=0.5_r8*(u_ref(1:Idim   ,1:Jdim,Kdim) + u(1:Idim,1:Jdim,Kdim-1))
 
-  v(1:Idim   ,1:Jdim,Kdim)=(v_ref(1:Idim   ,1:Jdim,Kdim))!+ v(1:Idim,1:Jdim,Kdim-1))
+  v(1:Idim   ,1:Jdim,Kdim)=0.5_r8*(v_ref(1:Idim   ,1:Jdim,Kdim) + v(1:Idim,1:Jdim,Kdim-1))
 
-  t(1:Idim   ,1:Jdim,Kdim)=(t_ref(1:Idim   ,1:Jdim,Kdim))!+ t(1:Idim,1:Jdim,Kdim-1))
+  t(1:Idim   ,1:Jdim,Kdim)=0.5_r8*(t_ref(1:Idim   ,1:Jdim,Kdim))!+ t(1:Idim,1:Jdim,Kdim-1))
 
-  q(1:Idim   ,1:Jdim,Kdim)=(q_ref(1:Idim   ,1:Jdim,Kdim))!+ q(1:Idim,1:Jdim,Kdim-1))
+  q(1:Idim   ,1:Jdim,Kdim)=0.5_r8*(q_ref(1:Idim   ,1:Jdim,Kdim))!+ q(1:Idim,1:Jdim,Kdim-1))
 
 
   DO k=1,Kdim
 
-     u(1   ,1:Jdim,k)=(u_ref(1   ,1:Jdim,k))!+ u(2     ,1:Jdim,k))
-     u(Idim,1:Jdim,k)=(u_ref(Idim,1:Jdim,k))!+ u(Idim-1,1:Jdim,k))
+     u(1   ,1:Jdim,k)=0.5_r8*(u_ref(1   ,1:Jdim,k) + u(2     ,1:Jdim,k))
+     u(Idim,1:Jdim,k)=0.5_r8*(u_ref(Idim,1:Jdim,k) + u(Idim-1,1:Jdim,k))
 
-     u(1:Idim,1   ,k)=(u_ref(1:Idim,1   ,k))!+ u(1:Idim,2     ,k))
-     u(1:Idim,Jdim,k)=(u_ref(1:Idim,Jdim,k))!+ u(1:Idim,Jdim-1,k))
+     u(1:Idim,1   ,k)=0.5_r8*(u_ref(1:Idim,1   ,k) + u(1:Idim,2     ,k))
+     u(1:Idim,Jdim,k)=0.5_r8*(u_ref(1:Idim,Jdim,k) + u(1:Idim,Jdim-1,k))
 
-     v(1   ,1:Jdim,k)=(v_ref(1   ,1:Jdim,k))!+ v(2     ,1:Jdim,k))
-     v(Idim,1:Jdim,k)=(v_ref(Idim,1:Jdim,k))!+ v(Idim-1,1:Jdim,k))
+     v(1   ,1:Jdim,k)=0.5_r8*(v_ref(1   ,1:Jdim,k) + v(2     ,1:Jdim,k))
+     v(Idim,1:Jdim,k)=0.5_r8*(v_ref(Idim,1:Jdim,k) + v(Idim-1,1:Jdim,k))
 
-     v(1:Idim,1   ,k)=(v_ref(1:Idim,1   ,k))!+ v(1:Idim,2     ,k))
-     v(1:Idim,Jdim,k)=(v_ref(1:Idim,Jdim,k))!+ v(1:Idim,Jdim-1,k))
+     v(1:Idim,1   ,k)=0.5_r8*(v_ref(1:Idim,1   ,k) + v(1:Idim,2     ,k))
+     v(1:Idim,Jdim,k)=0.5_r8*(v_ref(1:Idim,Jdim,k) + v(1:Idim,Jdim-1,k))
 
      t(1   ,1:Jdim,k)=(t_ref(1   ,1:Jdim,k))!+ t(2     ,1:Jdim,k))
      t(Idim,1:Jdim,k)=(t_ref(Idim,1:Jdim,k))!+ t(Idim-1,1:Jdim,k))
@@ -198,11 +199,11 @@ CONTAINS
             !       a*cos^2(theta) |         d lambda  |  
             !                      |                   |  
             !                       --               --   
-            IF(u(xc,yc,k) >= 0.0_r8) THEN 
-              udux = (1.0_r8/(r_earth*(cos(CoordLat(xc,yc))))) * (u(xc,yc,k) *((u(xf,yc,k) - u(xc,yc,k))/(DeltaLamda(xc,yc)))) 
-            ELSE
-              udux = (1.0_r8/(r_earth*(cos(CoordLat(xc,yc))))) * (u(xc,yc,k) *((u(xb,yc,k) - u(xc,yc,k))/(DeltaLamda(xc,yc))))
-            END IF  
+            uadvc = (1.0_r8/6.0_r8)*(u(xf,yc,k)+u(xc,yc,k)+u(xc,yf,k)+u(xc,yb,k)+u(xc,yc,k)+u(xb,yc,k))
+   
+            udux = (1.0_r8/(r_earth*(cos(CoordLat(xc,yc))**2))) * &
+                     (uadvc *((u(xf,yc,k) - u(xb,yc,k))/(2_r8*DeltaLamda(xc,yc)))) 
+
             !
             !                       --                --
             !                       |                   |
@@ -211,13 +212,10 @@ CONTAINS
             !        a*cos(theta)   |         d theta   | 
             !                       |                   |
             !                       --                 --
+            vadvc = (1.0_r8/6.0_r8)*(v(xf,yc,k)+v(xc,yc,k)+v(xc,yf,k)+v(xc,yb,k)+v(xc,yc,k)+v(xb,yc,k))
 
-            IF(v(xc,yc,k) >= 0.0_r8) THEN 
-               vduy  = (1.0_r8/(r_earth))  *  (v(xc,yc,k)*((u(xc,yf,k) - u(xc,yc,k))/(DeltaTheta(xc,yc))))
-            ELSE
-               vduy  = (1.0_r8/(r_earth))  *  (v(xc,yc,k)*((u(xc,yb,k) - u(xc,yc,k))/(DeltaTheta(xc,yc))))
-            END IF  
-
+            vduy  = (1.0_r8/(r_earth*cos(CoordLat(xc,yc))))  * &
+                    (vadvc*((u(xc,yf,k) - u(xc,yb,k))/(2.0_r8*DeltaTheta(xc,yc))))
 
             !      --                --
             !      |                   |
@@ -226,9 +224,11 @@ CONTAINS
             !      |         d P       | 
             !      |                   |
             !      --                 --
+            wadvc = 0.05_r8*(0.25_r8*(w_ref (xf,yc,k  ) + w_ref (xb,yc,k  ) +w_ref (xc,yf,k  ) + w_ref (xc,yb,k  )) + &
+                             0.25_r8*(w_ref (xf,yc,k+1) + w_ref (xb,yc,k+1) +w_ref (xc,yf,k+1) + w_ref (xc,yb,k+1)))
             Ps_xf=Plevs(k+1)!(p_ref(xc,yc)*(Plevs(k+1)/100000.0_r8))
             Ps_xc=Plevs(k+0)!(p_ref(xc,yc)*(Plevs(k+0)/100000.0_r8))
-            wduz = w_ref (xc,yc,k) * ((u(xc,yc,k+1) - u(xc,yc,k))/(Ps_xf-Ps_xc))
+            wduz = wadvc * ((u(xc,yc,k+1) - u(xc,yc,k))/(Ps_xf-Ps_xc))
 
             !      --       --
             !      |         |
@@ -250,26 +250,25 @@ CONTAINS
             Tv=t(xc,yc,k)*(1.0_r8 + CTv*q(xc,yc,k))
             lnPs_xf=log(Plevs(k))
             lnPs_xb=log(Plevs(k))
-            dPdx =(1.0_r8/(r_earth)) * (((z_ref(xf,yc,k) - z_ref(xb,yc,k))/(DeltaLamda(xc,yc))) + &
+            dPdx =(1.0_r8/(r_earth)) * (((z_ref(xf,yc,k) - z_ref(xb,yc,k))/(2.0*DeltaLamda(xc,yc))) + &
                                           Rd*Tv*((lnPs_xf-lnPs_xb)/(DeltaLamda(xc,yc))))
             !                  -         -
             ! d(u)            |d(d(u))    |
             ! -----  - Neta * |--------   | = 0
             ! dt              |dxdx       |
             !                  -         -
-            factor=(r_earth**2)*(cos(CoordLat(xc,yc))**2)
-            vis2dudx=- vis*(1/factor)*((u(xf,yc,k) - 2.0*u(xc,yc,k) + u(xb,yc,k))/(DeltaLamda(xc,yc)*DeltaLamda(xc,yc)))
+            factor=(r_earth**2)*(cos(CoordLat(xc,yc))**4)
+            vis2dudx= -vis*(1/factor)*((u(xf,yc,k) - 2.0*u(xc,yc,k) + u(xb,yc,k))/(DeltaLamda(xc,yc)*DeltaLamda(xc,yc)))
             !
             !                  -       -
             ! d(u)             |d(d(u)) |
             ! -----   - Neta * |--------| = 0
             ! dt               |dydy    |
             !                  -       -
-            term1=-sin(CoordLat(xc,yc))*((u(xc,yf,k) - u(xc,yc,k))/(DeltaTheta(xc,yc))) &
-                  + cos(CoordLat(xc,yc))*((u(xc,yf,k) - 2.0*u(xc,yc,k) + u(xc,yb,k))/(DeltaTheta(xc,yc)*DeltaTheta(xc,yc)))
-            vis2dudy=- vis*(term1) 
+            factor=(r_earth**2)*(cos(CoordLat(xc,yc))**2)
+            vis2dudy= -vis*(1.0/factor)*((u(xc,yf,k) - 2.0*u(xc,yc,k) + u(xc,yb,k))/(DeltaTheta(xc,yc)*DeltaTheta(xc,yc)))
 
-            TermEqMomU(xc,yc,k) = -( udux + vduy + wduz+ fcov  + TermNewton)
+            TermEqMomU(xc,yc,k) = -( udux + vduy + wduz + fcov + dPdx + vis2dudx+ vis2dudy+TermNewton)
          END DO
       END DO
   END DO

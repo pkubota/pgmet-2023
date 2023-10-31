@@ -57,9 +57,9 @@ CONTAINS
       END IF
       test=TimeIncrementSeg(idatei,idatec,ICtrDay,TimeIncrSeg,jhr,jday,jmon,jyr,&
                             ktm,kt,ktp,ahour,bhour,nMaxIteration,dt_step,itr)
-      IF(MOD(TimeIncrSeg,3600.0_r8) == 0.0_r8)THEN
+       IF(MOD(TimeIncrSeg,3600.0_r8) == 0.0_r8)THEN
          CALL WriteFields(irecw)
-      END IF
+       END IF
       
 
 

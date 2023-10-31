@@ -37,7 +37,7 @@ CONTAINS
   !     DT                    90
   !C * ----- < 1.0  =  100* ------ 
   !     DX                   25000  
-  dt_step=90.0
+  dt_step=240.0
   ICtrDay=0
  END SUBROUTINE Init_Class_Module_TimeManager
 
