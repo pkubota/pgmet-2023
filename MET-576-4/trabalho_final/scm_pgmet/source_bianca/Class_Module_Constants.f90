@@ -1,8 +1,12 @@
-!
-!  $Author: pkubota $
-!  $Date: 2008/09/23 17:51:54 $
-!  $Revision: 1.9 $
-!
+!  $Author: pkubota 						$
+!  $Date: 2008/09/23 17:51:54 					$
+!  $Revision: 1.9 						$
+!  $Revisions are currently made by the class's students.	$
+!  $Update Date: 01/11/2023 10:19 AM				$
+!  
+!  Implementações: 
+!  	1) Colocar INIT e FINALIZE - OK
+
 MODULE Constants
 
   IMPLICIT NONE
@@ -45,13 +49,18 @@ MODULE Constants
   REAL (KIND=r8),PUBLIC, PARAMETER :: CTv=Eps1/Eps  ! Constant Used to Convert Tv into T, or vice-versa.
 
   PUBLIC :: InitClassModuleConstants
+  PUBLIC :: Finalize_Class_Module_Constants
 
 CONTAINS
 
- SUBROUTINE InitClassModuleConstants () 
+ SUBROUTINE InitClassModuleConstants() !INIT
     IMPLICIT NONE
 
-
  END SUBROUTINE InitClassModuleConstants
+ 
+ SUBROUTINE Finalize_Class_Module_Constants() !FINALIZE
+    IMPLICIT NONE
+
+ END SUBROUTINE Finalize_Class_Module_Constants
 
 END MODULE Constants
