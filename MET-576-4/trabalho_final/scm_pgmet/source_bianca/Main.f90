@@ -1,3 +1,16 @@
+!  $Author: pkubota $
+!  $Date: 2008/09/23 17:51:54 $
+!  $Revision: 1.9 $
+!  $Revisions are currently made by the class's students.
+!  $Update Date: 31/10/2023
+!  
+!  Implementações: 
+!  	1) Colocar INIT e FINALIZE em todas as rotinas e no Main - OK
+! 	2) Colocar as equações dos campos no "Class_Module_Dynamics"
+! 	3) No Main, implementar para salvar os campos
+! 	4) Como fazer o Call Physics?
+!	5) Testar com os dados do ERA5 a inicialização e saving
+
 PROGRAM Main
  USE Constants, Only: InitClassModuleConstants, r8,r4
  USE Class_Module_TimeManager, Only : Init_Class_Module_TimeManager, dt_step,&
@@ -43,7 +56,7 @@ CONTAINS
       !
       rec=GetRec2ReadWrite(idatei,idatec)
       CALL ReadFields(rec,TimeIncrSeg)
-      
+      !CALL Physics
       CALL RunDynamics(itr)
       
       IF(MOD(TimeIncrSeg,3600.0_r8) == 0.0_r8)THEN
@@ -60,20 +73,15 @@ CONTAINS
        IF(MOD(TimeIncrSeg,3600.0_r8) == 0.0_r8)THEN
          CALL WriteFields(irecw)
        END IF
-      
-
-
   END DO
  END SUBROUTINE Run
 
  SUBROUTINE Finalize()
   IMPLICIT NONE
-   CALL FinalizeFields()
+   CALL Finalize_Class_Module_Constants()
+   CALL Finalize_Class_Module_TimeManager()
+   CALL Finalize_Class_Module_Fields()
+   CALL Finalize_Class_Module_Dynamics(nLat,nLon,nLev,dt_step)
  END SUBROUTINE Finalize
-
-
-
-
-
 
 END PROGRAM Main
