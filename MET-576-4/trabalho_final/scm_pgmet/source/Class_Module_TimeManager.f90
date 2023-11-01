@@ -18,17 +18,17 @@ CONTAINS
  SUBROUTINE Init_Class_Module_TimeManager()
   IMPLICIT NONE
   idatei(1) = 00 
-  idatei(2) = 01 
+  idatei(2) = 18 
   idatei(3) = 04 
   idatei(4) = 2023 
   
   idatec(1) = 00 
-  idatec(2) = 01 
+  idatec(2) = 18 
   idatec(3) = 04 
   idatec(4) = 2023
 
   idatef(1) = 00 
-  idatef(2) = 30 
+  idatef(2) = 24 
   idatef(3) = 04 
   idatef(4) = 2023
 

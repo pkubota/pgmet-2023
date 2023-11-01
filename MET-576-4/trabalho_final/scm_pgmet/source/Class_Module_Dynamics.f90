@@ -18,7 +18,7 @@ MODULE Class_Module_Dynamics
   INTEGER ::  Kdim
   REAL(KIND=r8) :: DeltaT
   REAL(KIND=8), PUBLIC   ,parameter        :: vis    =  2.0e2_r8! 1.5e-10 !1.5e-5        !  viscosity
-  REAL(KIND=8), PUBLIC   ,parameter        :: taul   = 3600_r8
+  REAL(KIND=8), PUBLIC   ,parameter        :: taul   = 1*3600_r8
   ! Selecting Unit
 
 
@@ -157,29 +157,29 @@ CONTAINS
 
   DO k=1,Kdim
 
-     u(1   ,1:Jdim,k)=0.5_r8*(u_ref(1   ,1:Jdim,k) + u(2     ,1:Jdim,k))
-     u(Idim,1:Jdim,k)=0.5_r8*(u_ref(Idim,1:Jdim,k) + u(Idim-1,1:Jdim,k))
+     u(1   ,1:Jdim,k)=0.25_r8*(u_ref(1   ,1:Jdim,k) + u(2     ,1:Jdim,k) + u(3     ,1:Jdim,k) + u_ref(2     ,1:Jdim,k) )
+     u(Idim,1:Jdim,k)=0.25_r8*(u_ref(Idim,1:Jdim,k) + u(Idim-1,1:Jdim,k) + u(Idim-2,1:Jdim,k) + u_ref(Idim-1,1:Jdim,k) )
 
-     u(1:Idim,1   ,k)=0.5_r8*(u_ref(1:Idim,1   ,k) + u(1:Idim,2     ,k))
-     u(1:Idim,Jdim,k)=0.5_r8*(u_ref(1:Idim,Jdim,k) + u(1:Idim,Jdim-1,k))
+     u(1:Idim,1   ,k)=0.25_r8*(u_ref(1:Idim,1   ,k) + u(1:Idim,2     ,k) + u(1:Idim,3     ,k) + u_ref(1:Idim,2     ,k) )
+     u(1:Idim,Jdim,k)=0.25_r8*(u_ref(1:Idim,Jdim,k) + u(1:Idim,Jdim-1,k) + u(1:Idim,Jdim-2,k) + u_ref(1:Idim,Jdim-1,k) )
 
-     v(1   ,1:Jdim,k)=0.5_r8*(v_ref(1   ,1:Jdim,k) + v(2     ,1:Jdim,k))
-     v(Idim,1:Jdim,k)=0.5_r8*(v_ref(Idim,1:Jdim,k) + v(Idim-1,1:Jdim,k))
+     v(1   ,1:Jdim,k)=0.25_r8*(v_ref(1   ,1:Jdim,k) + v(2     ,1:Jdim,k) + v(3     ,1:Jdim,k) + v_ref(2     ,1:Jdim,k) )
+     v(Idim,1:Jdim,k)=0.25_r8*(v_ref(Idim,1:Jdim,k) + v(Idim-1,1:Jdim,k) + v(Idim-2,1:Jdim,k) + v_ref(Idim-1,1:Jdim,k) )
 
-     v(1:Idim,1   ,k)=0.5_r8*(v_ref(1:Idim,1   ,k) + v(1:Idim,2     ,k))
-     v(1:Idim,Jdim,k)=0.5_r8*(v_ref(1:Idim,Jdim,k) + v(1:Idim,Jdim-1,k))
+     v(1:Idim,1   ,k)=0.25_r8*(v_ref(1:Idim,1   ,k) + v(1:Idim,2     ,k) + v(1:Idim,3     ,k) + v_ref(1:Idim,2     ,k) )
+     v(1:Idim,Jdim,k)=0.25_r8*(v_ref(1:Idim,Jdim,k) + v(1:Idim,Jdim-1,k) + v(1:Idim,Jdim-2,k) + v_ref(1:Idim,Jdim-1,k) )
 
-     t(1   ,1:Jdim,k)=(t_ref(1   ,1:Jdim,k))!+ t(2     ,1:Jdim,k))
-     t(Idim,1:Jdim,k)=(t_ref(Idim,1:Jdim,k))!+ t(Idim-1,1:Jdim,k))
+     t(1   ,1:Jdim,k)=0.25_r8*(t_ref(1   ,1:Jdim,k) + t(2     ,1:Jdim,k) + t(3     ,1:Jdim,k) + t_ref(2     ,1:Jdim,k))
+     t(Idim,1:Jdim,k)=0.25_r8*(t_ref(Idim,1:Jdim,k) + t(Idim-1,1:Jdim,k) + t(Idim-2,1:Jdim,k) + t_ref(Idim-1,1:Jdim,k))
 
-     t(1:Idim,1   ,k)=(t_ref(1:Idim,1   ,k))!+ t(1:Idim,2     ,k))
-     t(1:Idim,Jdim,k)=(t_ref(1:Idim,Jdim,k))!+ t(1:Idim,Jdim-1,k))
+     t(1:Idim,1   ,k)=0.25_r8*(t_ref(1:Idim,1   ,k) + t(1:Idim,2     ,k) + t(1:Idim,3     ,k) + t_ref(1:Idim,2     ,k))
+     t(1:Idim,Jdim,k)=0.25_r8*(t_ref(1:Idim,Jdim,k) + t(1:Idim,Jdim-1,k) + t(1:Idim,Jdim-2,k) + t_ref(1:Idim,Jdim-1,k))
 
-     q(1   ,1:Jdim,k)=(q_ref(1   ,1:Jdim,k))!+ q(2     ,1:Jdim,k))
-     q(Idim,1:Jdim,k)=(q_ref(Idim,1:Jdim,k))!+ q(Idim-1,1:Jdim,k))
+     q(1   ,1:Jdim,k)=0.25_r8*(q_ref(1   ,1:Jdim,k) + q(2     ,1:Jdim,k) + q(3     ,1:Jdim,k) + q_ref(2     ,1:Jdim,k))
+     q(Idim,1:Jdim,k)=0.25_r8*(q_ref(Idim,1:Jdim,k) + q(Idim-1,1:Jdim,k) + q(Idim-2,1:Jdim,k) + q_ref(Idim-1,1:Jdim,k))
 
-     q(1:Idim,1   ,k)=(q_ref(1:Idim,1   ,k))!+ q(1:Idim,2     ,k))
-     q(1:Idim,Jdim,k)=(q_ref(1:Idim,Jdim,k))!+ q(1:Idim,Jdim-1,k))
+     q(1:Idim,1   ,k)=0.25_r8*(q_ref(1:Idim,1   ,k) + q(1:Idim,2     ,k) + q(1:Idim,3     ,k) + q_ref(1:Idim,2     ,k))
+     q(1:Idim,Jdim,k)=0.25_r8*(q_ref(1:Idim,Jdim,k) + q(1:Idim,Jdim-1,k) + q(1:Idim,Jdim-2,k) + q_ref(1:Idim,Jdim-1,k))
 
   END DO
   

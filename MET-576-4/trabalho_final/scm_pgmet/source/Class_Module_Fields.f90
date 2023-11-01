@@ -213,7 +213,7 @@ CONTAINS
   REAL(KIND=r8), INTENT(IN   ) :: TimeIncrSeg
   REAL(KIND=r8) :: w1
   REAL(KIND=r8) :: w2
-
+  INTEGER       :: i,j,k
   w1=1.0_r8-mod(TimeIncrSeg,3600.0_r8)/3600.0_r8
   w2=mod(TimeIncrSeg,3600.0_r8)/3600.0_r8
 
@@ -244,6 +244,37 @@ CONTAINS
   q_ref= var3Q_A *w1 + w2*var3Q_B
   z_ref= var3Z_A *w1 + w2*var3Z_B
 
+  DO k=1,nLev
+
+     z_ref(1   ,1:nLat,k)=0.25_r8*(z_ref(1   ,1:nLat,k) + z_ref(2     ,1:nLat,k) + z_ref(3     ,1:nLat,k) + z_ref(2     ,1:nLat,k) )
+     z_ref(nLon,1:nLat,k)=0.25_r8*(z_ref(nLon,1:nLat,k) + z_ref(nLon-1,1:nLat,k) + z_ref(nLon-2,1:nLat,k) + z_ref(nLon-1,1:nLat,k) )
+
+     z_ref(1:nLon,1   ,k)=0.25_r8*(z_ref(1:nLon,1   ,k) + z_ref(1:nLon,2     ,k) + z_ref(1:nLon,3     ,k) + z_ref(1:nLon,2     ,k) )
+     z_ref(1:nLon,nLat,k)=0.25_r8*(z_ref(1:nLon,nLat,k) + z_ref(1:nLon,nLat-1,k) + z_ref(1:nLon,nLat-2,k) + z_ref(1:nLon,nLat-1,k) )
+
+     w_ref(1   ,1:nLat,k)=0.25_r8*(w_ref(1   ,1:nLat,k) + w_ref(2     ,1:nLat,k) + w_ref(3     ,1:nLat,k) + w_ref(2     ,1:nLat,k) )
+     w_ref(nLon,1:nLat,k)=0.25_r8*(w_ref(nLon,1:nLat,k) + w_ref(nLon-1,1:nLat,k) + w_ref(nLon-2,1:nLat,k) + w_ref(nLon-1,1:nLat,k) )
+
+     w_ref(1:nLon,1   ,k)=0.25_r8*(w_ref(1:nLon,1   ,k) + w_ref(1:nLon,2     ,k) + w_ref(1:nLon,3     ,k) + w_ref(1:nLon,2     ,k) )
+     w_ref(1:nLon,nLat,k)=0.25_r8*(w_ref(1:nLon,nLat,k) + w_ref(1:nLon,nLat-1,k) + w_ref(1:nLon,nLat-2,k) + w_ref(1:nLon,nLat-1,k) )
+  END DO
+  DO k=1,nLev
+     DO j=2,nLat-1
+        DO i=2,nLon-1
+           z_ref(i   ,j,k)=(1.0_r8/5.0_r8)*(z_ref(i+1,j,k) + z_ref(i,j,k) + z_ref(i-1,j,k)+ z_ref(i,j+1,k)+ z_ref(i,j-1,k))
+           w_ref(i   ,j,k)=(1.0_r8/5.0_r8)*(w_ref(i+1,j,k) + w_ref(i,j,k) + w_ref(i-1,j,k)+ w_ref(i,j+1,k)+ w_ref(i,j-1,k))
+        END DO
+     END DO
+  END DO
+
+  DO k=1,nLev-1
+     u_ref(:,:,k)= 0.5_r8*(u_ref(:,:,k+1)+u_ref(:,:,k))
+     v_ref(:,:,k)= 0.5_r8*(v_ref(:,:,k+1)+v_ref(:,:,k))
+     w_ref(:,:,k)= 0.5_r8*(w_ref(:,:,k+1)+w_ref(:,:,k))
+     t_ref(:,:,k)= 0.5_r8*(t_ref(:,:,k+1)+t_ref(:,:,k))
+     q_ref(:,:,k)= 0.5_r8*(q_ref(:,:,k+1)+q_ref(:,:,k))
+     z_ref(:,:,k)= 0.5_r8*(z_ref(:,:,k+1)+z_ref(:,:,k))
+  END DO
  END SUBROUTINE ReadFields
  
  
