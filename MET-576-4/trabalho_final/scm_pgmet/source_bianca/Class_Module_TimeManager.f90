@@ -1,8 +1,19 @@
+!  $Author: pkubota 						$
+!  $Date: 2008/09/23 17:51:54 					$
+!  $Revision: 1.9 						$
+!  $Revisions are currently made by the class's students.	$
+!  $Update Date: 01/11/2023 10:19 AM				$
+!  
+!  Implementações: 
+!  	1) Colocar INIT e FINALIZE - OK
+!	2) Mudar a data de acordo com ERA5 - OK
+
+
 MODULE Class_Module_TimeManager
- USE Constants, Only: InitClassModuleConstants, r8,r4,i4,nfprt
+ USE Constants, Only: InitClassModuleConstants,r8, r4, i4, nfprt
  IMPLICIT NONE
  PRIVATE
- INTEGER         , PUBLIC           :: idatei(4)
+ INTEGER         , PUBLIC           :: idatei(4)  !array with four elements
  INTEGER         , PUBLIC           :: idatec(4)
  INTEGER         , PUBLIC           :: idatef(4)
  INTEGER         , PUBLIC           :: DHFCT
@@ -14,6 +25,8 @@ MODULE Class_Module_TimeManager
  PUBLIC :: SetTimeControl
  PUBLIC :: TimeIncrementSeg
  PUBLIC :: GetRec2ReadWrite
+ PUBLIC :: Finalize_Class_Module_TimeManager
+ 
 CONTAINS
  SUBROUTINE Init_Class_Module_TimeManager()
   IMPLICIT NONE
@@ -28,10 +41,9 @@ CONTAINS
   idatec(4) = 2023
 
   idatef(1) = 00 
-  idatef(2) = 24 
+  idatef(2) = 19 !24 é o final
   idatef(3) = 04 
   idatef(4) = 2023
-
 
   DHFCT=24
   !     DT                    90
@@ -938,5 +950,10 @@ CONTAINS
     ENDIF
 
   END SUBROUTINE calndr
+  
+  SUBROUTINE Finalize_Class_Module_TimeManager() !FINALIZE
+  	IMPLICIT NONE
+
+  END SUBROUTINE Finalize_Class_Module_TimeManager
 
 END MODULE Class_Module_TimeManager

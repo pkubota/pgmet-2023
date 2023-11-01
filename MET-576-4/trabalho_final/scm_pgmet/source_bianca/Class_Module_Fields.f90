@@ -1,10 +1,16 @@
-!
-!  $Author: pkubota $
-!  $Date: 2008/09/23 17:51:54 $
-!  $Revision: 1.9 $
-!
+!  $Author: pkubota 						$
+!  $Date: 2008/09/23 17:51:54 					$
+!  $Revision: 1.9 						$
+!  $Revisions are currently made by the class's students.	$
+!  $Update Date: 01/11/2023 10:19 AM				$
+!  
+!  Implementações: 
+!  	1) Colocar INIT e FINALIZE - OK
+! 	7) Amortecimento das condições de contorno - OK
+!	8) Colocar todos os campos em "WRITE FIELDS" e salvar um bin - 
+
 MODULE Class_Module_Fields
- USE Constants, Only: r8,r4,i4,pi,Deg2Rad,r_earth,omega,nfprt
+ USE Constants, Only: r8, r4, i4, pi, Deg2Rad, r_earth, omega, nfprt
 
   IMPLICIT NONE
   PRIVATE       
@@ -68,8 +74,6 @@ MODULE Class_Module_Fields
   REAL(KIND=r4), ALLOCATABLE :: var3Z_A(:,:,:) 
   REAL(KIND=r4), ALLOCATABLE :: var3Z_B(:,:,:) 
 
-
-
   REAL(KIND=r8),PUBLIC, ALLOCATABLE :: U_N(:,:,:) 
   REAL(KIND=r8),PUBLIC, ALLOCATABLE :: U_C(:,:,:) 
 
@@ -81,12 +85,14 @@ MODULE Class_Module_Fields
 
   REAL(KIND=r8),PUBLIC, ALLOCATABLE :: Q_N(:,:,:) 
   REAL(KIND=r8),PUBLIC, ALLOCATABLE :: Q_C(:,:,:) 
-
-
-  PUBLIC :: Init_Class_Module_Fields,ReadFields,WriteFields,FinalizeFields
+  
+!!!!!!!!!!!!!!!!!SUBROUTINES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  
+  PUBLIC :: Init_Class_Module_Fields, ReadFields, WriteFields, Finalize_Class_Module_Fields
+  
 CONTAINS
 
- SUBROUTINE Init_Class_Module_Fields () 
+ SUBROUTINE Init_Class_Module_Fields() !INIT
   IMPLICIT NONE
   INTEGER :: i,j
   ALLOCATE(Plevs(nLev));Plevs=0.0
@@ -140,29 +146,31 @@ CONTAINS
   INQUIRE(IOLENGTH=lrec2D)var2P_A
   INQUIRE(IOLENGTH=lrec3D)var3U_A
 
-  OPEN(unit=unitzgeo,FILE='/cygdrive/d/paulo.kubota/pgmet/scm_pgmet/datain/GeoPotential.bin',&
+  OPEN(unit=unitzgeo,FILE='GeoPotential.bin',&
        FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='READ',STATUS='OLD') 
 
-  OPEN(unit=unittemp,FILE='/cygdrive/d/paulo.kubota/pgmet/scm_pgmet/datain/Temperature.bin',&
+  OPEN(unit=unittemp,FILE='Temperature.bin',&
        FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='READ',STATUS='OLD') 
 
-  OPEN(unit=unitumes,FILE='/cygdrive/d/paulo.kubota/pgmet/scm_pgmet/datain/SpecificHumidy.bin',&
+  OPEN(unit=unitumes,FILE='SpecificHumidy.bin',&
        FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='READ',STATUS='OLD') 
 
-  OPEN(unit=unituvel,FILE='/cygdrive/d/paulo.kubota/pgmet/scm_pgmet/datain/ZonalWind.bin',&
+  OPEN(unit=unituvel,FILE='ZonalWind.bin',&
        FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='READ',STATUS='OLD') 
 
-  OPEN(unit=unitvvel,FILE='/cygdrive/d/paulo.kubota/pgmet/scm_pgmet/datain/MeridionalWind.bin',&
+  OPEN(unit=unitvvel,FILE='MeridionalWind.bin',&
        FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='READ',STATUS='OLD') 
 
-  OPEN(unit=unitomeg,FILE='/cygdrive/d/paulo.kubota/pgmet/scm_pgmet/datain/Omega.bin',&
+  OPEN(unit=unitomeg,FILE='Omega.bin',&
        FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='READ',STATUS='OLD') 
 
-  OPEN(unit=unitsurp,FILE='/cygdrive/d/paulo.kubota/pgmet/scm_pgmet/datain/SurfacePressure.bin',&
+  OPEN(unit=unitsurp,FILE='SurfacePressure.bin',&
        FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec2D,ACTION='READ',STATUS='OLD') 
 
-  OPEN(unit=unitoutp,FILE='/cygdrive/d/paulo.kubota/pgmet/scm_pgmet/dataout/SCM_OUT.bin',&
+  OPEN(unit=unitoutp,FILE='SCM_OUT.bin',&
       FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='WRITE',STATUS='UNKNOWN') 
+
+!!!!!!!!!!!!!!!!!!!!DEFINIÇÃO DA MALHA (QUADRADA)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   DO j=1,nLat
      CoordLon(1,j) = InitLon*Deg2Rad
@@ -207,13 +215,14 @@ CONTAINS
   Plevs=Plevs*100.0_r8
  END SUBROUTINE Init_Class_Module_Fields
 
- SUBROUTINE ReadFields (irec,TimeIncrSeg) 
+ SUBROUTINE ReadFields(irec,TimeIncrSeg) 
   IMPLICIT NONE 
   INTEGER      , INTENT(IN   ) :: irec
   REAL(KIND=r8), INTENT(IN   ) :: TimeIncrSeg
   REAL(KIND=r8) :: w1
   REAL(KIND=r8) :: w2
   INTEGER       :: i,j,k
+
   w1=1.0_r8-mod(TimeIncrSeg,3600.0_r8)/3600.0_r8
   w2=mod(TimeIncrSeg,3600.0_r8)/3600.0_r8
 
@@ -287,11 +296,54 @@ CONTAINS
 
  END SUBROUTINE WriteFields
 
- SUBROUTINE FinalizeFields()
+ SUBROUTINE Finalize_Class_Module_Fields() !FINALIZE
   IMPLICIT NONE 
 
+  DEALLOCATE(Plevs)
+  DEALLOCATE(CoordLat)
+  DEALLOCATE(CoordLon)
+  DEALLOCATE(FcorPar)
+  DEALLOCATE(DeltaLamda)
+  DEALLOCATE(DeltaTheta)
+  DEALLOCATE(var2P_A)
+  DEALLOCATE(var2P_B)
+  DEALLOCATE(var3U_A)
+  DEALLOCATE(var3U_B)
+  DEALLOCATE(var3V_A)
+  DEALLOCATE(var3V_B)
+  DEALLOCATE(var3W_A)
+  DEALLOCATE(var3W_B)
+  DEALLOCATE(var3T_A)
+  DEALLOCATE(var3T_B)
+  DEALLOCATE(var3Q_A)
+  DEALLOCATE(var3Q_B)
+  DEALLOCATE(var3Z_A)
+  DEALLOCATE(var3Z_B)
+  DEALLOCATE(U_N)
+  DEALLOCATE(U_C)
   DEALLOCATE(V_N)
+  DEALLOCATE(V_C)
+  DEALLOCATE(T_N)
+  DEALLOCATE(T_C)
+  DEALLOCATE(Q_N)
+  DEALLOCATE(Q_C)
+  DEALLOCATE(p_ref)  
+  DEALLOCATE(u_ref)
+  DEALLOCATE(v_ref)
+  DEALLOCATE(w_ref)
+  DEALLOCATE(t_ref)
+  DEALLOCATE(q_ref)
+  DEALLOCATE(z_ref)
 
- END SUBROUTINE FinalizeFields
+  CLOSE(unit=unitzgeo, STATUS='KEEP')
+  CLOSE(unit=unittemp, STATUS='KEEP')
+  CLOSE(unit=unitumes, STATUS='KEEP')
+  CLOSE(unit=unituvel, STATUS='KEEP')
+  CLOSE(unit=unitvvel, STATUS='KEEP')
+  CLOSE(unit=unitomeg, STATUS='KEEP')
+  CLOSE(unit=unitsurp, STATUS='KEEP')
+  CLOSE(unit=unitoutp, STATUS='KEEP')
+
+ END SUBROUTINE Finalize_Class_Module_Fields
 
 END MODULE Class_Module_Fields
