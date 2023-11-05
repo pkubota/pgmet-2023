@@ -7,7 +7,7 @@
 !  Implementações: 
 !  	1) Colocar INIT e FINALIZE - OK
 ! 	7) Amortecimento das condições de contorno - OK
-!	8) Colocar todos os campos em "WRITE FIELDS" e salvar um bin - 
+!	8) Colocar todos os campos em "WRITE FIELDS" e salvar um bin - OK
 
 MODULE Class_Module_Fields
  USE Constants, Only: r8, r4, i4, pi, Deg2Rad, r_earth, omega, nfprt
@@ -166,9 +166,19 @@ CONTAINS
 
   OPEN(unit=unitsurp,FILE='SurfacePressure.bin',&
        FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec2D,ACTION='READ',STATUS='OLD') 
-
-  OPEN(unit=unitoutp,FILE='SCM_OUT.bin',&
+       
+!SAIDAS DO MODELO SAO SALVAS EM:
+  OPEN(unit=unitumodel,FILE='ModelU.bin',&
+      FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='WRITE',STATUS='UNKNOWN')
+      
+  OPEN(unit=unittmodel,FILE='ModelT.bin',&
       FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='WRITE',STATUS='UNKNOWN') 
+      
+  OPEN(unit=unitmmodel,FILE='ModelM.bin',&
+      FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='WRITE',STATUS='UNKNOWN') 
+      
+  OPEN(unit=unitqmodel,FILE='ModelQ.bin',&
+      FORM='UNFORMATTED',ACCESS='DIRECT',RECL=lrec3D,ACTION='WRITE',STATUS='UNKNOWN')   
 
 !!!!!!!!!!!!!!!!!!!!DEFINIÇÃO DA MALHA (QUADRADA)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -286,14 +296,23 @@ CONTAINS
   END DO
  END SUBROUTINE ReadFields
  
+ ! NAO ENTENDI A LOGICA MAS VOU SEGUI-LA
  
  SUBROUTINE WriteFields(irec)
   IMPLICIT NONE 
   INTEGER      , INTENT(INOUT) :: irec
   
   irec=irec+1
-  WRITE(unitoutp,rec=irec)REAL(U_C,kind=r4)
-
+  
+  !WRITE(unitzgeo,rec=irec)REAL(Z_C,kind=r4) !GeoPotential
+  WRITE(unittmodel,rec=irec)REAL(T_C,kind=r4) !Temperature
+  WRITE(unitqmodel,rec=irec)REAL(Q_C,kind=r4) !SpecificHumidy
+  WRITE(unitumodel,rec=irec)REAL(U_C,kind=r4) !ZonalWind
+  WRITE(unitvmodel,rec=irec)REAL(V_C,kind=r4) !MeridionalWind
+  !WRITE(unitomeg,rec=irec)REAL(O_C,kind=r4) !Omega
+  !WRITE(unitsurp,rec=irec)REAL(PS_C,kind=r4) !SurfacePressure   
+  !WRITE(unitoutp,rec=irec)REAL(U_C,kind=r4) !SCM_OUT
+    
  END SUBROUTINE WriteFields
 
  SUBROUTINE Finalize_Class_Module_Fields() !FINALIZE

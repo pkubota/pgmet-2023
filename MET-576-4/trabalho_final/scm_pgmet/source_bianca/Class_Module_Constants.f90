@@ -48,8 +48,7 @@ MODULE Constants
 
   REAL (KIND=r8),PUBLIC, PARAMETER :: CTv=Eps1/Eps  ! Constant Used to Convert Tv into T, or vice-versa.
 
-  PUBLIC :: InitClassModuleConstants
-  PUBLIC :: Finalize_Class_Module_Constants
+  PUBLIC :: InitClassModuleConstants, Finalize_Class_Module_Constants
 
 CONTAINS
 

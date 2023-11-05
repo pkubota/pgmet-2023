@@ -40,8 +40,8 @@ CONTAINS
   idatec(3) = 04 
   idatec(4) = 2023
 
-  idatef(1) = 00 
-  idatef(2) = 19 !24 é o final
+  idatef(1) = 24 
+  idatef(2) = 18 !24 é o final
   idatef(3) = 04 
   idatef(4) = 2023
 

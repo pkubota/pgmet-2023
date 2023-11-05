@@ -7,7 +7,8 @@
 !  Implementações: 
 !  	1) Colocar INIT e FINALIZE - OK 
 ! 	2) Colocar as equações dos campos no "Class_Module_Dynamics" - 
- 
+! 	7) Amortecimento das condições de contorno - 
+
 MODULE Class_Module_Dynamics
  USE Constants, Only: r8,r4,i4,pi,Deg2Rad,Rd,Cp,kappa,r_earth,omega,CTv,nfprt
   
@@ -25,8 +26,7 @@ MODULE Class_Module_Dynamics
   REAL(KIND=8), PUBLIC   ,parameter        :: vis    =  2.0e2_r8! 1.5e-10 !1.5e-5        !  viscosity
   REAL(KIND=8), PUBLIC   ,parameter        :: taul   = 3600_r8
   ! Selecting Unit
-  PUBLIC :: Init_Class_Module_Dynamics, Finalize_Class_Module_Dynamics
-  PUBLIC :: RunDynamics
+  PUBLIC :: Init_Class_Module_Dynamics, Finalize_Class_Module_Dynamics, RunDynamics
   
 CONTAINS
 
@@ -80,10 +80,10 @@ CONTAINS
      DO k=1,Kdim
         DO j=1,Jdim
            DO i=1,  Idim
-              uo(i,j,k)=  U_C  (i,j,k)
-              vo(i,j,k)=  v_ref(i,j,k)
-              to(i,j,k)=  t_ref(i,j,k)
-              qo(i,j,k)=  q_ref(i,j,k)
+              uo(i,j,k)=  U_C(i,j,k)
+              vo(i,j,k)=  V_C(i,j,k) 
+              to(i,j,k)=  T_C(i,j,k)
+              qo(i,j,k)=  Q_C(i,j,k)
            END DO
         END DO
      END DO
@@ -118,7 +118,7 @@ CONTAINS
        END DO
     END DO
  END DO
- PRINT*,it,MAXVAL(U_C(2:Idim,2:Jdim,2:Kdim-1)),MINVAL(U_C(2:Idim,2:Jdim,2:Kdim-1)),&
+ PRINT*,it,MAXVAL(U_C(2:Idim,2:Jdim,2:Kdim-1)),MINVAL(U_C(2:Idim,2:Jdim,2:Kdim-1)),& !TESTAR
            MAXVAL(w_ref(2:Idim,2:Jdim,2:Kdim-1)), MINVAL(w_ref(2:Idim,2:Jdim,2:Kdim-1))
  END SUBROUTINE RunDynamics
  
@@ -149,6 +149,8 @@ CONTAINS
   TermEqMomU=0.0_r8;TermEqMomV=0.0_r8; TermEqConT=0.0_r8; TermEqConQ=0.0_r8
   u=u_in;v=v_in;t=t_in;q=q_in
   
+  !O QUE ISSO FAZ?
+  
   u(1:Idim   ,1:Jdim,Kdim)=0.5_r8*(u_ref(1:Idim   ,1:Jdim,Kdim) + u(1:Idim,1:Jdim,Kdim-1))
 
   v(1:Idim   ,1:Jdim,Kdim)=0.5_r8*(v_ref(1:Idim   ,1:Jdim,Kdim) + v(1:Idim,1:Jdim,Kdim-1))
@@ -157,43 +159,45 @@ CONTAINS
 
   q(1:Idim   ,1:Jdim,Kdim)=0.5_r8*(q_ref(1:Idim   ,1:Jdim,Kdim))!+ q(1:Idim,1:Jdim,Kdim-1))
 
+ !IMPLEMENTAR AQUI AMORTECIMENTO COM 4 PONTOS
 
   DO k=1,Kdim
 
-     u(1   ,1:Jdim,k)=0.5_r8*(u_ref(1   ,1:Jdim,k) + u(2     ,1:Jdim,k))
-     u(Idim,1:Jdim,k)=0.5_r8*(u_ref(Idim,1:Jdim,k) + u(Idim-1,1:Jdim,k))
+     u(1   ,1:Jdim,k)=0.25_r8*(u_ref(1   ,1:Jdim,k) + u(2     ,1:Jdim,k) + u(3     ,1:Jdim,k) + u_ref(2     ,1:Jdim,k) )
+     u(Idim,1:Jdim,k)=0.25_r8*(u_ref(Idim,1:Jdim,k) + u(Idim-1,1:Jdim,k) + u(Idim-2,1:Jdim,k) + u_ref(Idim-1,1:Jdim,k) )
 
-     u(1:Idim,1   ,k)=0.5_r8*(u_ref(1:Idim,1   ,k) + u(1:Idim,2     ,k))
-     u(1:Idim,Jdim,k)=0.5_r8*(u_ref(1:Idim,Jdim,k) + u(1:Idim,Jdim-1,k))
+     u(1:Idim,1   ,k)=0.25_r8*(u_ref(1:Idim,1   ,k) + u(1:Idim,2     ,k) + u(1:Idim,3     ,k) + u_ref(1:Idim,2     ,k) )
+     u(1:Idim,Jdim,k)=0.25_r8*(u_ref(1:Idim,Jdim,k) + u(1:Idim,Jdim-1,k) + u(1:Idim,Jdim-2,k) + u_ref(1:Idim,Jdim-1,k) )
 
-     v(1   ,1:Jdim,k)=0.5_r8*(v_ref(1   ,1:Jdim,k) + v(2     ,1:Jdim,k))
-     v(Idim,1:Jdim,k)=0.5_r8*(v_ref(Idim,1:Jdim,k) + v(Idim-1,1:Jdim,k))
+     v(1   ,1:Jdim,k)=0.25_r8*(v_ref(1   ,1:Jdim,k) + v(2     ,1:Jdim,k) + v(3     ,1:Jdim,k) + v_ref(2     ,1:Jdim,k) )
+     v(Idim,1:Jdim,k)=0.25_r8*(v_ref(Idim,1:Jdim,k) + v(Idim-1,1:Jdim,k) + v(Idim-2,1:Jdim,k) + v_ref(Idim-1,1:Jdim,k) )
 
-     v(1:Idim,1   ,k)=0.5_r8*(v_ref(1:Idim,1   ,k) + v(1:Idim,2     ,k))
-     v(1:Idim,Jdim,k)=0.5_r8*(v_ref(1:Idim,Jdim,k) + v(1:Idim,Jdim-1,k))
+     v(1:Idim,1   ,k)=0.25_r8*(v_ref(1:Idim,1   ,k) + v(1:Idim,2     ,k) + v(1:Idim,3     ,k) + v_ref(1:Idim,2     ,k) )
+     v(1:Idim,Jdim,k)=0.25_r8*(v_ref(1:Idim,Jdim,k) + v(1:Idim,Jdim-1,k) + v(1:Idim,Jdim-2,k) + v_ref(1:Idim,Jdim-1,k) )
 
-     t(1   ,1:Jdim,k)=(t_ref(1   ,1:Jdim,k))!+ t(2     ,1:Jdim,k))
-     t(Idim,1:Jdim,k)=(t_ref(Idim,1:Jdim,k))!+ t(Idim-1,1:Jdim,k))
+     t(1   ,1:Jdim,k)=0.25_r8*(t_ref(1   ,1:Jdim,k) + t(2     ,1:Jdim,k) + t(3     ,1:Jdim,k) + t_ref(2     ,1:Jdim,k))
+     t(Idim,1:Jdim,k)=0.25_r8*(t_ref(Idim,1:Jdim,k) + t(Idim-1,1:Jdim,k) + t(Idim-2,1:Jdim,k) + t_ref(Idim-1,1:Jdim,k))
 
-     t(1:Idim,1   ,k)=(t_ref(1:Idim,1   ,k))!+ t(1:Idim,2     ,k))
-     t(1:Idim,Jdim,k)=(t_ref(1:Idim,Jdim,k))!+ t(1:Idim,Jdim-1,k))
+     t(1:Idim,1   ,k)=0.25_r8*(t_ref(1:Idim,1   ,k) + t(1:Idim,2     ,k) + t(1:Idim,3     ,k) + t_ref(1:Idim,2     ,k))
+     t(1:Idim,Jdim,k)=0.25_r8*(t_ref(1:Idim,Jdim,k) + t(1:Idim,Jdim-1,k) + t(1:Idim,Jdim-2,k) + t_ref(1:Idim,Jdim-1,k))
 
-     q(1   ,1:Jdim,k)=(q_ref(1   ,1:Jdim,k))!+ q(2     ,1:Jdim,k))
-     q(Idim,1:Jdim,k)=(q_ref(Idim,1:Jdim,k))!+ q(Idim-1,1:Jdim,k))
+     q(1   ,1:Jdim,k)=0.25_r8*(q_ref(1   ,1:Jdim,k) + q(2     ,1:Jdim,k) + q(3     ,1:Jdim,k) + q_ref(2     ,1:Jdim,k))
+     q(Idim,1:Jdim,k)=0.25_r8*(q_ref(Idim,1:Jdim,k) + q(Idim-1,1:Jdim,k) + q(Idim-2,1:Jdim,k) + q_ref(Idim-1,1:Jdim,k))
 
-     q(1:Idim,1   ,k)=(q_ref(1:Idim,1   ,k))!+ q(1:Idim,2     ,k))
-     q(1:Idim,Jdim,k)=(q_ref(1:Idim,Jdim,k))!+ q(1:Idim,Jdim-1,k))
+     q(1:Idim,1   ,k)=0.25_r8*(q_ref(1:Idim,1   ,k) + q(1:Idim,2     ,k) + q(1:Idim,3     ,k) + q_ref(1:Idim,2     ,k))
+     q(1:Idim,Jdim,k)=0.25_r8*(q_ref(1:Idim,Jdim,k) + q(1:Idim,Jdim-1,k) + q(1:Idim,Jdim-2,k) + q_ref(1:Idim,Jdim-1,k))
+
 
   END DO
   
-  
+  !PARTE ESPACIAL
   DO k=1,Kdim-1 
       DO j=2,Jdim-1
          CALL index(j,Jdim,yb,yc,yf)
          DO i=2,Idim-1
             CALL index(i,Idim,xb,xc,xf)
 
-             TermNewton=(u(xc,yc,k)-u_ref(xc,yc,k))/taul
+            TermNewton = (u(xc,yc,k) - u_ref(xc,yc,k))/taul !O QUE É ISSO?
             !
             !                       --               --   
             !                      |                   |  
@@ -202,7 +206,7 @@ CONTAINS
             !       a*cos^2(theta) |         d lambda  |  
             !                      |                   |  
             !                       --               --   
-            uadvc = (1.0_r8/6.0_r8)*(u(xf,yc,k)+u(xc,yc,k)+u(xc,yf,k)+u(xc,yb,k)+u(xc,yc,k)+u(xb,yc,k))
+            uadvc = (1.0_r8/6.0_r8) * (u(xf,yc,k) + u(xc,yc,k) + u(xc,yf,k) + u(xc,yb,k) + u(xc,yc,k) + u(xb,yc,k))
    
             udux = (1.0_r8/(r_earth*(cos(CoordLat(xc,yc))**2))) * &
                      (uadvc *((u(xf,yc,k) - u(xb,yc,k))/(2_r8*DeltaLamda(xc,yc)))) 
@@ -271,7 +275,21 @@ CONTAINS
             factor=(r_earth**2)*(cos(CoordLat(xc,yc))**2)
             vis2dudy= -vis*(1.0/factor)*((u(xc,yf,k) - 2.0*u(xc,yc,k) + u(xc,yb,k))/(DeltaTheta(xc,yc)*DeltaTheta(xc,yc)))
 
-            TermEqMomU(xc,yc,k) = -( udux + vduy + wduz + fcov + dPdx + vis2dudx+ vis2dudy+TermNewton)
+            TermEqMomU(xc,yc,k) = -( udux + vduy + wduz + fcov + dPdx + vis2dudx + vis2dudy + TermNewton)
+            !TERMO DA MERIDIONAL
+            !TERMO DA TEMPERATURA:
+            !
+            !                       --               --   
+            !                      |                   |  
+            !            1         |          dT       |  
+            !udTx= ----------------|   U * ----------  |  
+            !       a*cos^2(theta) |         d lambda  |  
+            !                      |                   |  
+            !                       --               --  
+            !TERMO DA UMIDADE:
+            
+            
+            
          END DO
       END DO
   END DO
