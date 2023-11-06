@@ -7,11 +7,11 @@
 !  Implementações: 
 !  	1) Colocar INIT e FINALIZE em todas as rotinas e no Main - OK e funcionando
 ! 	2) Colocar as equações dos campos no "Class_Module_Dynamics" - 
-! 	3) No Main, implementar para salvar os campos 
+! 	3) No Main, implementar para salvar os campos - OK
 ! 	4) Como fazer o Call Physics? 
 !	5) Testar com os dados do ERA5 a inicialização e saving
-!	6) Não imprimir no terminal, salvar em um .txt a integração! - 
-! 	7) Amortecimento das condições de contorno - 
+!	6) Não imprimir no terminal, salvar em um .txt a integração! - OK e funcionando
+! 	7) Amortecimento das condições de contorno - OK e funcionando pouco
 !	8) Colocar todos os campos em "WRITE FIELDS" e salvar um bin - 
 
 PROGRAM Main
@@ -55,6 +55,7 @@ CONTAINS
 
   output_filename = 'output.txt' ! OUTPUT DOS TEMPOS CORRENTES
   OPEN(unit=output_unit, file=output_filename, status='replace')
+ 
   
   ahour=0.0_r8;bhour=0.0_r8;irecw=0
   TimeIncrSeg=0.0_r8
