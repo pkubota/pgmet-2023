@@ -6,13 +6,14 @@
 !  
 !  Implementações: 
 !  	1) Colocar INIT e FINALIZE em todas as rotinas e no Main - OK e funcionando
-! 	2) Colocar as equações dos campos no "Class_Module_Dynamics" - 
+! 	2) Colocar as equações dos campos no "Class_Module_Dynamics" - OK
 ! 	3) No Main, implementar para salvar os campos - OK
 ! 	4) Como fazer o Call Physics? 
-!	5) Testar com os dados do ERA5 a inicialização e saving
+!	5) Testar com os dados do ERA5 a inicialização e saving - OK e funcionando
 !	6) Não imprimir no terminal, salvar em um .txt a integração! - OK e funcionando
 ! 	7) Amortecimento das condições de contorno - OK e funcionando pouco
-!	8) Colocar todos os campos em "WRITE FIELDS" e salvar um bin - 
+!	8) Colocar todos os campos em "WRITE FIELDS" e salvar um bin - OK e funcionando 
+! 	9) Parametrizações no Call Physics
 
 PROGRAM Main
  USE Constants, Only: InitClassModuleConstants, r8,r4, Finalize_Class_Module_Constants
