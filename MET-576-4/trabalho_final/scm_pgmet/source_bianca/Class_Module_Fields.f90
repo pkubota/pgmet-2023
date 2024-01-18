@@ -25,6 +25,11 @@ MODULE Class_Module_Fields
   INTEGER,PUBLIC, PARAMETER :: unitumes=54
   INTEGER,PUBLIC, PARAMETER :: unitzgeo=55
   INTEGER,PUBLIC, PARAMETER :: unitoutp=60
+  
+  INTEGER,PUBLIC, PARAMETER :: unitumodel=61  
+  INTEGER,PUBLIC, PARAMETER :: unittmodel=62
+  INTEGER,PUBLIC, PARAMETER :: unitmmodel=63
+  INTEGER,PUBLIC, PARAMETER :: unitqmodel=64    
 
   INTEGER                    :: irec_local
   INTEGER,PUBLIC             :: nLon     = 161
@@ -304,14 +309,12 @@ CONTAINS
   
   irec=irec+1
   
-  !WRITE(unitzgeo,rec=irec)REAL(Z_C,kind=r4) !GeoPotential
+
   WRITE(unittmodel,rec=irec)REAL(T_C,kind=r4) !Temperature
   WRITE(unitqmodel,rec=irec)REAL(Q_C,kind=r4) !SpecificHumidy
   WRITE(unitumodel,rec=irec)REAL(U_C,kind=r4) !ZonalWind
-  WRITE(unitvmodel,rec=irec)REAL(V_C,kind=r4) !MeridionalWind
-  !WRITE(unitomeg,rec=irec)REAL(O_C,kind=r4) !Omega
-  !WRITE(unitsurp,rec=irec)REAL(PS_C,kind=r4) !SurfacePressure   
-  !WRITE(unitoutp,rec=irec)REAL(U_C,kind=r4) !SCM_OUT
+  WRITE(unitmmodel,rec=irec)REAL(V_C,kind=r4) !MeridionalWind
+
     
  END SUBROUTINE WriteFields
 
@@ -338,7 +341,7 @@ CONTAINS
   DEALLOCATE(var3Q_B)
   DEALLOCATE(var3Z_A)
   DEALLOCATE(var3Z_B)
-  DEALLOCATE(U_N)
+  DEALLOCATE(U_N)   !tempo futuro
   DEALLOCATE(U_C)
   DEALLOCATE(V_N)
   DEALLOCATE(V_C)
@@ -362,6 +365,13 @@ CONTAINS
   CLOSE(unit=unitomeg, STATUS='KEEP')
   CLOSE(unit=unitsurp, STATUS='KEEP')
   CLOSE(unit=unitoutp, STATUS='KEEP')
+  
+  CLOSE(unit=unitumodel, STATUS='KEEP')
+  CLOSE(unit=unittmodel, STATUS='KEEP')
+  CLOSE(unit=unitmmodel, STATUS='KEEP')
+  CLOSE(unit=unitqmodel, STATUS='KEEP')
+ 
+
 
  END SUBROUTINE Finalize_Class_Module_Fields
 

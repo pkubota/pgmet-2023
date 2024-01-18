@@ -6,11 +6,11 @@
 !  
 !  Implementações: 
 !  	1) Colocar INIT e FINALIZE - OK 
-! 	2) Colocar as equações dos campos no "Class_Module_Dynamics" - 
-! 	7) Amortecimento das condições de contorno - 
+! 	2) Colocar as equações dos campos no "Class_Module_Dynamics" - OK
+! 	7) Amortecimento das condições de contorno - OK (funcionando parcialmente)
 
 MODULE Class_Module_Dynamics
- USE Constants, Only: r8,r4,i4,pi,Deg2Rad,Rd,Cp,kappa,r_earth,omega,CTv,nfprt
+ USE Constants, Only: r8,r4,i4,pi,Deg2Rad,Rd,Cp,kappa,r_earth,omega,CTv,nfprt, Eps
   
  
  USE Class_Module_Fields, Only: u_ref, v_ref,w_ref, t_ref,q_ref,z_ref,p_ref,&
@@ -128,21 +128,22 @@ CONTAINS
   REAL(KIND=8), dimension(1:Idim, 1:Jdim,1:kdim), intent(in) ::  u_in,  v_in,  t_in , q_in
   REAL(KIND=8), dimension(1:Idim, 1:Jdim,1:kdim), intent(out) :: TermEqMomU,TermEqMomV, TermEqConT, TermEqConQ
   REAL(KIND=8), dimension(1:Idim, 1:Jdim,1:kdim) ::  u,  v,  t , q
-  REAL(KIND=8) :: udux
-  REAL(KIND=8) :: vduy
-  REAL(KIND=8) :: wduz
+  REAL(KIND=8) :: udux, udvx, udqx, vdTx   
+  REAL(KIND=8) :: vduy, vdvy, vdqy, udTy
+  REAL(KIND=8) :: wduz, wdvz, wdqz, wdTz
   REAL(KIND=8) :: fcov
-  REAL(KIND=8) :: dPdx
+  REAL(KIND=8) :: hh  
+  REAL(KIND=8) :: dPdx, dPdy
   REAL(KIND=8) :: lnPs_xf
   REAL(KIND=8) :: lnPs_xb
   REAL(KIND=8) :: Ps_xf
   REAL(KIND=8) :: Ps_xc
-  REAL(KIND=8) :: Tv
-  REAL(KIND=8) :: vis2dudx
-  REAL(KIND=8) :: vis2dudy
-  REAL(KIND=8) :: factor
+  REAL(KIND=8) :: Tv, kTv, kTv0
+  REAL(KIND=8) :: vis2dudx, vis2dvdx, vis2dqdx
+  REAL(KIND=8) :: vis2dudy, vis2dvdy, vis2dqdy 
+  REAL(KIND=8) :: factor4,factor2
   REAL(KIND=8) :: term1,uadvc,vadvc,wadvc
-  REAL(KIND=8) :: TermNewton
+  REAL(KIND=8) :: TermUNewton, TermVNewton, TermTNewton, TermQNewton
   INTEGER :: i,j,k
   INTEGER :: xb,xc,xf
   INTEGER :: yb,yc,yf
@@ -197,7 +198,7 @@ CONTAINS
          DO i=2,Idim-1
             CALL index(i,Idim,xb,xc,xf)
 
-            TermNewton = (u(xc,yc,k) - u_ref(xc,yc,k))/taul !O QUE É ISSO?
+            TermUNewton = (u(xc,yc,k) - u_ref(xc,yc,k))/taul !Amortecimento para as forçantes
             !
             !                       --               --   
             !                      |                   |  
@@ -259,37 +260,212 @@ CONTAINS
             lnPs_xb=log(Plevs(k))
             dPdx =(1.0_r8/(r_earth)) * (((z_ref(xf,yc,k) - z_ref(xb,yc,k))/(2.0*DeltaLamda(xc,yc))) + &
                                           Rd*Tv*((lnPs_xf-lnPs_xb)/(DeltaLamda(xc,yc))))
+          
+            !Testar com e sem a difusão
             !                  -         -
             ! d(u)            |d(d(u))    |
             ! -----  - Neta * |--------   | = 0
             ! dt              |dxdx       |
             !                  -         -
-            factor=(r_earth**2)*(cos(CoordLat(xc,yc))**4)
-            vis2dudx= -vis*(1/factor)*((u(xf,yc,k) - 2.0*u(xc,yc,k) + u(xb,yc,k))/(DeltaLamda(xc,yc)*DeltaLamda(xc,yc)))
+            factor4=(r_earth**2)*(cos(CoordLat(xc,yc))**4)
+            vis2dudx= -vis*(1/factor4)*((u(xf,yc,k) - 2.0*u(xc,yc,k) + u(xb,yc,k)) &
+            		/(DeltaLamda(xc,yc)*DeltaLamda(xc,yc)))
             !
             !                  -       -
             ! d(u)             |d(d(u)) |
             ! -----   - Neta * |--------| = 0
             ! dt               |dydy    |
             !                  -       -
-            factor=(r_earth**2)*(cos(CoordLat(xc,yc))**2)
-            vis2dudy= -vis*(1.0/factor)*((u(xc,yf,k) - 2.0*u(xc,yc,k) + u(xc,yb,k))/(DeltaTheta(xc,yc)*DeltaTheta(xc,yc)))
+            factor2=(r_earth**2)*(cos(CoordLat(xc,yc))**2)
+            vis2dudy= -vis*(1.0/factor2)*((u(xc,yf,k) - 2.0*u(xc,yc,k) + u(xc,yb,k)) & 
+            		/(DeltaTheta(xc,yc)*DeltaTheta(xc,yc)))
 
-            TermEqMomU(xc,yc,k) = -( udux + vduy + wduz + fcov + dPdx + vis2dudx + vis2dudy + TermNewton)
+            TermEqMomU(xc,yc,k) = -( udux + vduy + wduz + fcov + dPdx + vis2dudx + vis2dudy + TermUNewton)
+            
             !TERMO DA MERIDIONAL
+            
+            TermVNewton = (v(xc,yc,k) - v_ref(xc,yc,k))/taul !Amortecimento para as forçantes           
+            !                       --               --   
+            !                      |                   |  
+            !            1         |          dv       |  
+            !udvx= ----------------|   U * ----------  |  
+            !       a*cos^2(theta) |         d lambda  |  
+            !                      |                   |  
+            !                       --               --      
+            udvx = (1.0_r8/(r_earth*(cos(CoordLat(xc,yc))**2))) * &
+                     (uadvc *((v(xf,yc,k) - v(xb,yc,k))/(2_r8*DeltaLamda(xc,yc)))) 
+            !                       --                --
+            !                       |                   |
+            !             1         |          dv       | 
+            !vdvy=  ----------------|   V * ----------  | 
+            !        a*cos(theta)   |         d theta   | 
+            !                       |                   |
+            !                       --                 --
+            vadvc = (1.0_r8/6.0_r8)*(v(xf,yc,k) + v(xc,yc,k) + v(xc,yf,k) + &
+            		v(xc,yb,k) + v(xc,yc,k) + v(xb,yc,k))
+
+            vdvy  = (1.0_r8/(r_earth*cos(CoordLat(xc,yc))))  * &
+                    (vadvc*((v(xc,yf,k) - v(xc,yb,k))/(2.0_r8*DeltaTheta(xc,yc))))
+
+            !      --                --
+            !      |                   |
+            !      |          dv       | 
+            !wdvz= |   w * ----------  | 
+            !      |         d P       | 
+            !      |                   |
+            !      --                 --
+            wadvc = 0.05_r8*(0.25_r8*(w_ref (xf,yc,k  ) + w_ref (xb,yc,k  ) +w_ref (xc,yf,k  ) + w_ref (xc,yb,k  )) + &
+                             0.25_r8*(w_ref (xf,yc,k+1) + w_ref (xb,yc,k+1) +w_ref (xc,yf,k+1) + w_ref (xc,yb,k+1)))
+            Ps_xf=Plevs(k+1)!(p_ref(xc,yc)*(Plevs(k+1)/100000.0_r8))
+            Ps_xc=Plevs(k+0)!(p_ref(xc,yc)*(Plevs(k+0)/100000.0_r8))
+            wdvz = wadvc * ((v(xc,yc,k+1) - v(xc,yc,k))/(Ps_xf-Ps_xc))
+
+            !      --       --
+            !      |         |
+            !      |         | 
+            !fcov= | f  * u  | 
+            !      |         | 
+            !      |         |
+            !      --      --
+    
+            fcov  =  FcorPar(xc,yc)*u(xc,yc,k)
+            !
+            !           --                            --
+            !                   |                                |
+            !        cos(theta) |       dZGeo           dln(P)   | 
+            !dPdy=   ---------  |    ---------- + Rd*Tv--------  | 
+            !            a      |     d theta           d theta  | 
+            !                   |                                |
+            !          --                             --
+            Tv=t(xc,yc,k)*(1.0_r8 + CTv*q(xc,yc,k))
+            lnPs_xf=log(Plevs(k)) 
+            lnPs_xb=log(Plevs(k)) 
+            dPdy =(cos(CoordLat(xc,yc))/(r_earth)) * (((z_ref(xc,yf,k) - z_ref(xc,yb,k))/(2.0*DeltaTheta(xc,yc))) + &
+                                          Rd*Tv*((lnPs_xf-lnPs_xb)/(2.0_r8*DeltaTheta(xc,yc)))) 
+            !                  -         -
+            ! HH=    sin(theta)      |      U^2 + V^2   |
+            !        -----------     |      ---------   | = 0
+            !      a*cos^2(theta)    |          1       |
+            !                  -         -
+        
+            hh=(sin(CoordLat(xc,yc))/(r_earth*cos(CoordLat(xc,yc))**2)) * ((u(xc,yc,k)**2) + (v(xc,yc,k)**2)) 
+            
+            !Testar com e sem a difusão
+            
+            !                  -         -
+            ! d(v)            |d(d(v))    |
+            ! -----  - Neta * |--------   | = 0
+            ! dt              |dxdx       |
+            !                  -         -         
+            vis2dvdx= -vis*(1/factor4)*((v(xf,yc,k) - 2.0*v(xc,yc,k) + v(xb,yc,k))/(DeltaLamda(xc,yc)*DeltaLamda(xc,yc)))
+            !
+            !                  -       -
+            ! d(v)             |d(d(v)) |
+            ! -----   - Neta * |--------| = 0
+            ! dt               |dydy    |
+            !                  -       -
+            vis2dvdy= -vis*(1.0/factor2)*((v(xc,yf,k) - 2.0*v(xc,yc,k) + v(xc,yb,k))/(DeltaTheta(xc,yc)*DeltaTheta(xc,yc)))
+
+            TermEqMomV(xc,yc,k) = -( udvx + vdvy + wdvz + fcov + dPdy + hh + vis2dvdx + vis2dvdy + TermVNewton)
+            
             !TERMO DA TEMPERATURA:
+            TermTNewton = (t(xc,yc,k) - t_ref(xc,yc,k))/taul !Amortecimento para as forçantes
+              
+  		!                       --               --   
+  		!                      |                   |  
+  		!            1         |          dT       |  
+  		!udT= ----------------|   U * ----------  |  
+  		!       a*cos^2(theta) |         d lambda  |  
+  		!                      |                   |  
+  		!                       --               --   
+   
+  		udTy = (1.0_r8/(r_earth*(cos(CoordLat(xc,yc))**2))) * &
+           		(uadvc *((t(xf,yc,k) - t(xb,yc,k))/(2_r8*DeltaLamda(xc,yc)))) 
+  
+  		!
+  		!                       --                --
+  		!                       |                   |
+  		!             1         |          dT       | 
+  		!vdTx=  ----------------|   V * ----------  | 
+  		!        a*cos(theta)   |         d theta   | 
+  		!                       |                   |
+  		!                       --                 --
+  
+  		vdTx  = (1.0_r8/(r_earth*cos(CoordLat(xc,yc))))  * &
+          		(vadvc*((t(xc,yf,k) - t(xc,yb,k))/(2.0_r8*DeltaTheta(xc,yc))))
+  
+  		!      --                --
+  		!      |                   |
+  		!      |          dT       | 
+  		!wdTz= |   w * ----------  | 
+  		!      |         d P       | 
+  		!      |                   |
+  		!      --                 --
+  
+  		wdTz = wadvc * ((t(xc,yc,k+1) - t(xc,yc,k))/(Ps_xf-Ps_xc))
+            
+            	!                        		 --                
+            	!                       		  |  
+            	!            kappa*T_v*omega          |            
+            	!kTv= - -------------------------	  |    
+            	!           (1 + (delta-1)q)p         |          
+            	!                       	          |                    
+           	!                                    --  
+           	kTv0 = (1 + (Eps - 1)*q(xc,yc,k) )*Plevs(k)
+            	kTv  = - Tv*kappa*w_ref(i,j,k) / kTv0
+                  
+  		TermEqConT(xc,yc,k) = -( vdTx + udTy + wdTz + kTv + TermTNewton)
+                                             
+            !TERMO DA UMIDADE:
+            TermQNewton = (q(xc,yc,k) - q_ref(xc,yc,k))/taul !Amortecimento para as forçantes
             !
             !                       --               --   
             !                      |                   |  
-            !            1         |          dT       |  
-            !udTx= ----------------|   U * ----------  |  
+            !            1         |          dq       |  
+            !udqx= ----------------|   U * ----------  |  
             !       a*cos^2(theta) |         d lambda  |  
             !                      |                   |  
-            !                       --               --  
-            !TERMO DA UMIDADE:
+            !                       --               --   
+            udqx = (1.0_r8/(r_earth*(cos(CoordLat(xc,yc))**2))) * &
+                     (uadvc *((q(xf,yc,k) - q(xb,yc,k))/(2_r8*DeltaLamda(xc,yc)))) 
+
+            !
+            !                       --                --
+            !                       |                   |
+            !             1         |          dq       | 
+            !vdqy=  ----------------|   V * ----------  | 
+            !        a*cos(theta)   |         d theta   | 
+            !                       |                   |
+            !                       --                 --
+            vdqy  = (1.0_r8/(r_earth*cos(CoordLat(xc,yc))))  * &
+                    (vadvc*((q(xc,yf,k) - q(xc,yb,k))/(2.0_r8*DeltaTheta(xc,yc))))
+
+            !      --                --
+            !      |                   |
+            !      |          dq       | 
+            !wdvz= |   w * ----------  | 
+            !      |         d P       | 
+            !      |                   |
+            !      --                 --
+            wdqz = wadvc * ((q(xc,yc,k+1) - q(xc,yc,k))/(Ps_xf-Ps_xc))
             
-            
-            
+            !      --       --            !                 
+            ! d(q)            |d(d(q))    |
+            ! -----  - Neta * |--------   | = 0
+            ! dt              |dxdx       |
+            !                  -         -
+            vis2dqdx= -vis*(1/factor4)*((q(xf,yc,k) - 2.0*q(xc,yc,k) + q(xb,yc,k))/(DeltaLamda(xc,yc)*DeltaLamda(xc,yc)))
+            !
+            !                  -       -
+            ! d(q)             |d(d(q)) |
+            ! -----   - Neta * |--------| = 0
+            ! dt               |dydy    |
+            !                  -       -
+
+            vis2dqdy= -vis*(1.0/factor2)*((q(xc,yf,k) - 2.0*q(xc,yc,k) + q(xc,yb,k))/(DeltaTheta(xc,yc)*DeltaTheta(xc,yc)))
+
+            TermEqConQ(xc,yc,k) = -(udqx + vdqy + wdqz + vis2dqdx + vis2dqdy + TermQNewton)
+                        
          END DO
       END DO
   END DO
